@@ -25,6 +25,8 @@ env.read_env()
 SECRET_KEY = os.environ.get('SECRET_KEY')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DEBUG = int(os.environ.get('DEBUG', default=0))
+ASAAS_KEY = os.environ.get('ASAAS_Key', default=None)
+ASAAS_URL = "https://www.asaas.com/api/v3/"
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
