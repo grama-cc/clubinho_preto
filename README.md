@@ -8,7 +8,7 @@ Plataforma de administração do clubinho Preto, desenvolvido em Django
     $ pip install -r requirements/local.txt
     
     
-#### Then simply apply the migrations:
+#### Then simply apply the migrations: 
 
     $ python manage.py migrate
     
