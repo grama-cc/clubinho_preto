@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import register
 from .models import Subscription, PaymentHistory
+from django.contrib.auth.models import Group
+from django_celery_beat.models import ClockedSchedule, CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
 
 
 class PaymentHistoryInlineAdmin(admin.TabularInline):
@@ -28,4 +30,13 @@ class SubscriptionAdmin(admin.ModelAdmin):
     import_subscriptions.short_description = "Importar assinaturas Asaas"
     update_subscriptions.short_description = "Atualizar assinaturas Asaas"
 
+
+admin.site.unregister(Group)
+
+# Hide Celery admin
+admin.site.unregister(ClockedSchedule)
+admin.site.unregister(CrontabSchedule)
+admin.site.unregister(IntervalSchedule)
+admin.site.unregister(PeriodicTask)
+admin.site.unregister(SolarSchedule)
 
