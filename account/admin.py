@@ -15,7 +15,7 @@ class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
     list_display = ('id', 'name', 'email', 'relatedness_raw', 'kids_race_raw', 'asaas_customer_id')
     ordering = ('name',)
-    actions = 'importar_planilha',
+    actions = 'importar_planilha', 'import_subscribers',
 
     def importar_planilha(modeladmin, request, queryset):
         path = 'account/data/info.xlsx'
@@ -54,3 +54,12 @@ class SubscriberAdmin(admin.ModelAdmin):
             messages.success(request, f'Foram importados {count} assinantes. Houveram {errors} erros')
             return
         messages.warning(request, f'O arquivo `{path}` não existe')
+
+
+    def import_subscribers(modeladmin, request, queryset):
+        from account.service import AccountService
+        created, errors, skipped = AccountService.import_asaas_customers()
+
+        modeladmin.message_user(request, f'{created} assinantes criadas, {errors} erros, {skipped} já existiam')
+
+    import_subscribers.short_description = 'Importar assinantes Asaas'

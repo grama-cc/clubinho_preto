@@ -1,6 +1,5 @@
 import requests
 from account.models import Subscriber
-from account.service import AccountService
 from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
 
 from finance.models import Subscription
@@ -17,13 +16,18 @@ class FinanceService:
     def get_asaas_customers():
         offset = 0
         limit = 100
-        customers = FinanceService.asaas_resquest(f'customers?offset={offset}&limit={limit}')
-        total_count = customers["totalCount"]
-        while offset < total_count:
-            for item in customers["data"]:
-                print(AccountService.update_asaas_customer_id(item["email"], item["id"]))
+        
+        url = f'customers?offset={offset}&limit={limit}'
+        content = FinanceService.asaas_resquest(url)
+        has_more = content.get('hasMore')
+        customers = content.get('data')
+        while has_more:
             offset += limit
-            customers = FinanceService.asaas_resquest(f'customers?offset={offset}&limit={limit}')
+            url = f'customers?offset={offset}&limit={limit}'
+            content = FinanceService.asaas_resquest(url)
+            customers += content.get('data')
+            has_more = content.get('hasMore')
+            
         return customers
 
     @staticmethod

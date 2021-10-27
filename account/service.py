@@ -1,4 +1,3 @@
-from os import name
 import requests
 from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
 
@@ -49,3 +48,51 @@ class AccountService:
                 # todo: create asaas customer on Subscriber model's save()?
 
         return response
+
+    @staticmethod
+    def import_asaas_customers():
+        from uuid import uuid4
+
+        from finance.service import FinanceService
+
+        asaas_customers = FinanceService.get_asaas_customers()
+        existing_customers_ids = Subscriber.objects.all().values_list('asaas_customer_id', flat=True)
+
+        created = errors = skipped = 0
+
+        for asaas_customer in asaas_customers:
+
+            # skip existing customers
+            if asaas_customer.get('id') in existing_customers_ids:
+                skipped +=1
+                continue
+
+            # concat all address fields
+            address_fields = 'address', 'addressNumber', 'complement', 'province'
+            field_values = [asaas_customer.get(field, None) for field in address_fields]
+            filtered_field_values = list(filter(lambda x: x is not None, field_values))
+            address = ', '.join(filtered_field_values)
+
+            ## disabled for lack of 'more_details' or 'description' field
+            # concat other fields 
+            # more_info_fields = 'cpfCnpj', 'additionalEmails'
+            # field_values = [f"{field}: {asaas_customer.get(field, '')}" for field in more_info_fields]
+            # more_info = '\n'.join(field_values)
+
+            email = asaas_customer.get('email', None) or f"{uuid4().int}@sem_email.com"
+            data = {
+                'asaas_customer_id': asaas_customer.get('id'),
+                'name': asaas_customer.get('name'),
+                'email': email,
+                'phone': asaas_customer.get('phone'),
+                'address': address,
+                'cep': asaas_customer.get('postalCode'),
+                # 'more_info': more_info,
+            }
+            try:
+                print(Subscriber.objects.create(**data))
+                created += 1
+            except Exception as e:
+                errors += 1
+
+        return [created, errors, skipped]
