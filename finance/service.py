@@ -81,3 +81,28 @@ class FinanceService:
                 errors += 1
 
         return [created, errors]
+        
+    @staticmethod
+    def update_asaas_subscriptions(ids=None):
+        asaas_subscriptions = FinanceService.get_asaas_subscriptions()
+        
+        updated = errors = 0
+
+        for asaas_subscription in asaas_subscriptions:            
+            subscriptions = Subscription.objects.filter(asaas_id=asaas_subscription.get('id'))
+            
+            data = {
+                'value': asaas_subscription.get('value'),
+                'billingType': asaas_subscription.get('billingType'),
+                'cycle': asaas_subscription.get('cycle'),
+                'description': asaas_subscription.get('description'),
+                'status': asaas_subscription.get('status'),
+                'deleted': asaas_subscription.get('deleted'),
+            }
+            try:
+                subscriptions.update(**data)
+                updated += len(subscriptions)
+            except:
+                errors += len(subscriptions) if subscriptions else 1
+
+        return [updated, errors]
