@@ -1,6 +1,9 @@
 import requests
-from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
+from account.models import Subscriber
 from account.service import AccountService
+from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
+
+from finance.models import Subscription
 
 
 class FinanceService:
@@ -11,7 +14,7 @@ class FinanceService:
         return r.json()
 
     @staticmethod
-    def get_asaas_customer():
+    def get_asaas_customers():
         offset = 0
         limit = 100
         customers = FinanceService.asaas_resquest(f'customers?offset={offset}&limit={limit}')
@@ -27,11 +30,11 @@ class FinanceService:
     def get_asaas_subscriptions(customer_id=None):
         offset = 0
         limit = 100
-        
+
         url = f'subscriptions?offset={offset}&limit={limit}'
         if customer_id:
             url += f'&customer={customer_id}'
-                
+
         content = FinanceService.asaas_resquest(url)
         subscriptions = content.get('data')
         has_more = content.get('hasMore')
@@ -45,3 +48,36 @@ class FinanceService:
 
         return subscriptions
 
+    @staticmethod
+    def import_asaas_subscriptions():
+        subscriptions = FinanceService.get_asaas_subscriptions()
+        existing_subscriptions_ids = Subscription.objects.all().values_list('asaas_id', flat=True)
+
+        created = errors = 0
+
+        for subscription in subscriptions:
+
+            # skip existing subscriptions
+            if subscription.get('id') in existing_subscriptions_ids:
+                continue
+
+            customer_id = subscription.get('customer')
+            subscriber = Subscriber.objects.filter(asaas_customer_id=customer_id).first() or None
+            data = {
+                'subscriber': subscriber.id if subscriber else None,
+                'value': subscription.get('value'),
+                'date': subscription.get('dateCreated'),
+                'asaas_id': subscription.get('id'),
+                'billingType': subscription.get('billingType'),
+                'cycle': subscription.get('cycle'),
+                'description': subscription.get('description'),
+                'status': subscription.get('status'),
+                'deleted': subscription.get('deleted'),
+            }
+            try:
+                print(Subscription.objects.create(**data))
+                created += 1
+            except:
+                errors += 1
+
+        return [created, errors]
