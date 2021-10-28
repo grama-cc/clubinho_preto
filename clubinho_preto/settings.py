@@ -26,7 +26,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DEBUG = int(os.environ.get('DEBUG', default=0))
 ASAAS_KEY = os.environ.get('ASAAS_Key', default=None)
-ASAAS_URL = "https://www.asaas.com/api/v3/"
+ASAAS_URL = os.environ.get('ASAAS_URL', default='https://www.asaas.com/api/v3/')
+
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
@@ -165,3 +166,4 @@ CELERY_BROKER_CONNECTION_MAX_RETRIES = None
 CELERY_TASK_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json", "msgpack"]
 CELERY_INSTALLED_APPS = INSTALLED_APPS
+CELERY_TASK_ALWAYS_EAGER=True
