@@ -18,9 +18,11 @@ from django.urls import path, include
 import debug_toolbar
 from clubinho_preto import settings
 from django.conf.urls.static import static
+from finance.views import SubscribeView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('subscribe', SubscribeView.as_view(), name='subscribe'),
 ]  + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
