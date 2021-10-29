@@ -29,6 +29,7 @@ class Subscriber(models.Model):
 
     email = models.EmailField()
     name = models.CharField(max_length=255, blank=True, null=True, verbose_name='Nome')
+    cpf = models.CharField(max_length=11, blank=True, null=True, verbose_name='CPF')
     asaas_customer_id = models.CharField(max_length=255,blank=True, null=True)
     phone = models.CharField(max_length=255, verbose_name="telefone", blank=True, null=True)
     address = models.CharField(max_length=255, verbose_name="endereço de entrega", blank=True, null=True)
