@@ -79,7 +79,7 @@ class FinanceService:
             customer_id = subscription.get('customer')
             subscriber = Subscriber.objects.filter(asaas_customer_id=customer_id).first() or None
             data = {
-                'subscriber': subscriber.id if subscriber else None,
+                'subscriber': subscriber if subscriber else None,
                 'value': subscription.get('value'),
                 'date': subscription.get('dateCreated'),
                 'asaas_id': subscription.get('id'),
@@ -92,7 +92,8 @@ class FinanceService:
             try:
                 print(Subscription.objects.create(**data))
                 created += 1
-            except:
+            except Exception as e:
+                print(f"Subscription import error {e}")
                 errors += 1
 
         return [created, errors]
