@@ -27,7 +27,7 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DEBUG = int(os.environ.get('DEBUG', default=0))
 ASAAS_KEY = os.environ.get('ASAAS_Key', default=None)
 ASAAS_URL = os.environ.get('ASAAS_URL', default='https://www.asaas.com/api/v3/')
-
+BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', default=None))
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
