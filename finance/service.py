@@ -138,3 +138,17 @@ class FinanceService:
         response = FinanceService.asaas_resquest(url, method='POST', data=data)
         return response
 
+    def create_asaas_subscription(customer_id, delivery_choice):
+        total_value = float(BASE_SUBSCRIPTION_VALUE) + float(delivery_choice.get('value'))
+        url = 'subscriptions'
+        data = {
+            "customer": customer_id,
+            "billingType": "UNDEFINED",
+            "value": total_value,
+            "dueDate": (datetime.now()+timedelta(days=1)).strftime('%Y-%m-%d'),
+            "description": f"Assinatura Clubinho Preto + frete para { delivery_choice.get('title')}",
+            "cycle": "MONTHLY"
+        }
+
+        response = FinanceService.asaas_resquest(url, method='POST', data=data)
+        return response

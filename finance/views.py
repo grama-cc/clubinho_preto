@@ -12,13 +12,13 @@ from finance.service import FinanceService
 class SubscribeView(View):
 
     def get(self, request):
-        # return render(request, 'success.html', {'delivery_options': DELIVERY_CHOICES.items()})
+        # return render(request, 'success.html', {'email':"fulano@gmail.com"})
         return render(request, 'subscription.html', {'delivery_options': DELIVERY_CHOICES.items()})
 
     def post(self, request):
         data = {}
         for key in ["email", "name", "cpfCnpj", "relatedness", "relatedness_raw", "phone", "kids_name",
-                    "kids_age", "kids_gender_raw", "address", "cep", "more_info"]:
+                    "kids_age", "kids_gender_raw", "address", "postalCode", "more_info"]:
             data[key] = request.POST.get(key)
 
         # Handle required delivery field
@@ -36,16 +36,12 @@ class SubscribeView(View):
         if asaas_response.ok:
             # Create payment request (in Asaas) and send paymentLink to user
             customer_id = asaas_response.json().get('id')
-            payment_response = FinanceService.create_asaas_payment(customer_id, delivery_choice)
+            payment_response = FinanceService.create_asaas_subscription(customer_id, delivery_choice)
             # print(f'payment_response {payment_response}')
 
             if payment_response and payment_response.get('id'):
-                # Redirect to success page with payment link
-                context = {
-                    'invoice_url': payment_response.get('invoiceUrl'),
-                    'bank_slip_url': payment_response.get('bankSlipUrl'),
-                }
-                # print(f'context {context}')
+
+                context = {'email': subscriber.email if subscriber else None}
                 return render(request, 'success.html', context)
 
             else:
@@ -54,5 +50,8 @@ class SubscribeView(View):
         else:
             # todo: send mail? or create Form error model
             message = json.loads(
-                response.content) if response.content else 'Ocorreu um erro interno. Por favor entre em contato'
+                asaas_response.content) if asaas_response.content else 'Ocorreu um erro interno. Por favor entre em contato'
+            if message and message.get('errors'):
+                errors = [error.get('description') for error in message.get('errors')]
+                message = '\n'.join(errors)
             return render(request, 'subscription.html', {'error_message': str(message)})

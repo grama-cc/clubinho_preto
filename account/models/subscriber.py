@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 
 class Subscriber(models.Model):
@@ -52,3 +53,8 @@ class Subscriber(models.Model):
 
     def __str__(self) -> str:
         return self.email
+
+    def save(self, *args, **kwargs) -> None:
+        if not self.subscribing_date:
+            self.subscribing_date = timezone.now()
+        return super().save(*args, **kwargs)
