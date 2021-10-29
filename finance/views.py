@@ -16,10 +16,6 @@ class SubscribeView(View):
         return render(request, 'subscription.html', {'delivery_options': DELIVERY_CHOICES.items()})
 
     def post(self, request):
-        data = {}
-        for key in ["email", "name", "cpfCnpj", "relatedness", "relatedness_raw", "phone", "kids_name",
-                    "kids_age", "kids_gender_raw", "address", "postalCode", "more_info"]:
-            data[key] = request.POST.get(key)
 
         # Handle required delivery field
         delivery_choice = request.POST.get('delivery', None)
@@ -28,7 +24,7 @@ class SubscribeView(View):
         delivery_choice = DELIVERY_CHOICES.get(delivery_choice)
 
         # print(f'delivery ok {delivery_choice}')
-        asaas_response, subscriber = AccountService.create_asaas_customer(data)
+        asaas_response, subscriber = AccountService.create_asaas_customer(request.POST)
         # At this point you may or may not have a Subscriber instance, if not, an email has been sent to the application admins
         # print(f'asaas_response ok {asaas_response.content}')
         # print(f'subscriber {subscriber}')

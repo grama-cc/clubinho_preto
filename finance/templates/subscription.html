@@ -23,9 +23,9 @@
 <body>
     <img class="header-image" src="{% static 'media/clubinho_header.png' %}" alt="Imagem Clubinho"
         title="Imagem Clubinho">
-    
+
     <div class="container">
-    
+
         <div class="header-info">
             <h1>🤴🏿👸🏿</h1>
             <h2>Que bom que você está construindo conosco um mundo melhor!</h2>
@@ -178,14 +178,61 @@
             </div>
 
             <div class="input-group">
-                <label for="address" class="required"> Endereço para entrega</label>
+                <label for="kids_race" class="required"> Cor/raça da criança </label>
+                <div>
+                    <label>
+                        <input type="radio" name="kids_race" id="WH" value="WH" required>
+                        <span>Branca</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="PA" value="PA">
+                        <span>Parda</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="BL" value="BL">
+                        <span>Preta</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="YE" value="YE">
+                        <span>Amarela</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="NA" value="NA">
+                        <span>Indígena</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="BN" value="BN">
+                        <span>Preta e Indígena</span>
+                    </label><br />
+
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="address" class="required col s8"> Endereço para entrega</label>
                 <input type="text" name="address" id="address" required>
             </div>
 
             <div class="input-group">
+                <label for="addressNumber" class="required"> Numero</label>
+                <input type="text" name="addressNumber" id="addressNumber" required pattern="[0-9]{1,}" class="validate">
+                <span class="helper-text" data-error="Preencha no formato: 123" data-success=""></span>
+            </div>
+
+            <div class="input-group">
+                <label for="complement"> Complemento</label>
+                <input type="text" name="complement" id="complement">
+            </div>
+
+            <div class="input-group">
+                <label for="province" class="required"> Bairro</label>
+                <input type="text" name="province" id="province" required>
+            </div>
+
+            <div class="input-group">
                 <label for="postalCode" class="required"> CEP</label>
-                <input type="text" name="postalCode" id="postalCode" required pattern="[0-9]{8}">
-                <span class="helper-text" data-error="Preencha no formato 12345678" data-success=""></span>
+                <input type="text" name="postalCode" id="postalCode" required pattern="[0-9]{8}" class="validate">
+                <span class="helper-text" data-error="Preencha no formato: 11223344" data-success=""></span>
             </div>
 
 

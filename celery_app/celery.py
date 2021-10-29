@@ -14,6 +14,9 @@ app.conf.broker_transport_options = {'visibility_timeout': 3600}
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
 
+    # todo: import users
+    # todo: update customers
+    
     sender.add_periodic_task(
         crontab(minute=0, hour='*/12'),
         task_import_subscriptions.s(),

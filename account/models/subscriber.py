@@ -31,10 +31,17 @@ class Subscriber(models.Model):
     email = models.EmailField()
     name = models.CharField(max_length=255, blank=True, null=True, verbose_name='Nome')
     cpf = models.CharField(max_length=11, blank=True, null=True, verbose_name='CPF')
+
     asaas_customer_id = models.CharField(max_length=255,blank=True, null=True)
+
     phone = models.CharField(max_length=255, verbose_name="telefone", blank=True, null=True)
     address = models.CharField(max_length=255, verbose_name="endereço de entrega", blank=True, null=True)
+    addressNumber = models.CharField(max_length=255, verbose_name="número", blank=True, null=True)
+    complement = models.CharField(max_length=255, verbose_name="complemento", blank=True, null=True)
+    province = models.CharField(max_length=255, verbose_name="bairro", blank=True, null=True)
     cep = models.CharField(max_length=255, verbose_name="CEP", blank=True, null=True)
+    delivery = models.CharField(max_length=255, verbose_name="frete para", blank=True, null=True)
+
     more_info = models.TextField(verbose_name="conta pra gente, do que a criança mais gosta", blank=True, null=True)
     relatedness = models.CharField(max_length=2, choices=RELATEDNESS.choices, default=RELATEDNESS.PARENT, blank=True, null=True)
     relatedness_raw = models.CharField(max_length=255, blank=True, null=True)
