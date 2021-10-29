@@ -14,11 +14,15 @@ app.conf.broker_transport_options = {'visibility_timeout': 3600}
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
 
-    # todo: import users
-    # todo: update customers
+    
     
     sender.add_periodic_task(
         crontab(minute=0, hour='*/12'),
+        task_import_asaas_customers.s(),
+    )
+
+    sender.add_periodic_task(
+        crontab(minute=15, hour='*/12'),
         task_import_subscriptions.s(),
     )
 
@@ -27,6 +31,7 @@ def setup_periodic_tasks(sender, **kwargs):
         task_update_subscriptions.s(),
     )
 
+    # todo: update customers
 
 @app.task
 def task_import_subscriptions():
@@ -39,3 +44,10 @@ def task_update_subscriptions():
     from finance.service import FinanceService
     updated, errors = FinanceService.update_asaas_subscriptions()
     return f'{updated} assinaturas atualizadas, {errors} erros'
+
+
+@app.task
+def task_import_asaas_customers():
+    from account.service import AccountService
+    created, errors, skipped = AccountService.import_asaas_customers()
+    return f'{created} clientes criados, {errors} erros'

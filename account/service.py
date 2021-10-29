@@ -69,12 +69,6 @@ class AccountService:
                 skipped += 1
                 continue
 
-            # concat all address fields
-            address_fields = 'address', 'addressNumber', 'complement', 'province'
-            field_values = [asaas_customer.get(field, None) for field in address_fields]
-            filtered_field_values = list(filter(lambda x: x is not None, field_values))
-            address = ', '.join(filtered_field_values)
-
             # disabled for lack of 'more_details' or 'description' field
             # concat other fields
             # more_info_fields = 'cpfCnpj', 'additionalEmails'
@@ -82,13 +76,16 @@ class AccountService:
             # more_info = '\n'.join(field_values)
 
             email = asaas_customer.get('email', None) or f"{uuid4().int}@sem_email.com"
+            keys = ['phone', 'address', 'addressNumber', 'complement', 'province']
+
             data = {
                 'asaas_customer_id': asaas_customer.get('id'),
                 'name': asaas_customer.get('name'),
                 'email': email,
-                'phone': asaas_customer.get('phone'),
-                'address': address,
                 'cep': asaas_customer.get('postalCode'),
+                'cpf': asaas_customer.get('cpfCnpj'),
+
+                **{key: asaas_customer.get(key, None) for key in keys},
                 # 'more_info': more_info,
             }
             try:
