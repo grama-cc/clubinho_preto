@@ -1,22 +1,33 @@
+import json
+from datetime import datetime, timedelta
+
 import requests
 from account.models import Subscriber
 from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
 
 from finance.models import Subscription
+from clubinho_preto.settings import BASE_SUBSCRIPTION_VALUE
 
 
 class FinanceService:
     @staticmethod
-    def asaas_resquest(api_endpoint):
+    def asaas_resquest(api_endpoint, method='GET', data=None):
         url = f'{ASAAS_URL}{api_endpoint}'
-        r = requests.get(url, headers={'access_token': ASAAS_KEY})
-        return r.json()
+
+        if method in ['GET', 'POST']:
+            if method == 'GET':
+                r = requests.get(url, headers={'access_token': ASAAS_KEY})
+            elif method == 'POST':
+                r = requests.post(url, data=json.dumps(data), headers={'access_token': ASAAS_KEY})
+            return r.json()
+
+        return False
 
     @staticmethod
     def get_asaas_customers():
         offset = 0
         limit = 100
-        
+
         url = f'customers?offset={offset}&limit={limit}'
         content = FinanceService.asaas_resquest(url)
         has_more = content.get('hasMore')
@@ -27,7 +38,7 @@ class FinanceService:
             content = FinanceService.asaas_resquest(url)
             customers += content.get('data')
             has_more = content.get('hasMore')
-            
+
         return customers
 
     @staticmethod
@@ -85,16 +96,16 @@ class FinanceService:
                 errors += 1
 
         return [created, errors]
-        
+
     @staticmethod
     def update_asaas_subscriptions(ids=None):
         asaas_subscriptions = FinanceService.get_asaas_subscriptions()
-        
+
         updated = errors = 0
 
-        for asaas_subscription in asaas_subscriptions:            
+        for asaas_subscription in asaas_subscriptions:
             subscriptions = Subscription.objects.filter(asaas_id=asaas_subscription.get('id'))
-            
+
             data = {
                 'value': asaas_subscription.get('value'),
                 'billingType': asaas_subscription.get('billingType'),
@@ -110,3 +121,20 @@ class FinanceService:
                 errors += len(subscriptions) if subscriptions else 1
 
         return [updated, errors]
+
+    @staticmethod
+    def create_asaas_payment(customer_id, delivery_choice):
+        total_value = float(BASE_SUBSCRIPTION_VALUE) + float(delivery_choice.get('value'))
+        url = 'payments'
+        data = {
+            "customer": customer_id,
+            "billingType": "UNDEFINED",
+            "value": total_value,
+            "dueDate": (datetime.now()+timedelta(days=1)).strftime('%Y-%m-%d'),
+            "description": f"Assinatura Clubinho Preto + frete para { delivery_choice.get('title')}",
+            "cycle": "MONTHLY",  # todo: check cycle
+        }
+
+        response = FinanceService.asaas_resquest(url, method='POST', data=data)
+        return response
+

@@ -27,16 +27,18 @@ class AccountService:
 
         url = f"{ASAAS_URL}/customers"
         response = requests.post(url, json=customer_data, headers={'access_token': ASAAS_KEY})
+        subscriber = None
         if response.ok:
             data = response.json()
 
             try:
-                Subscriber.objects.create(
+                subscriber = Subscriber.objects.create(
                     asaas_customer_id=data.get('id', None),
                     cep=data.get('postalCode', None),
 
                     name=data.get('name', None),
                     email=data.get('email', None),
+                    cpf=data.get('cpfCnpj', None),
                     phone=data.get('phone', None),
                     address=data.get('address', None),
 
@@ -44,10 +46,9 @@ class AccountService:
                 )
             except Exception as e:
                 print(f'______COULD NOT CREATE SUBSCRIBER: {e}')
-                # todo: handle error: delete customer from asaas?
-                # todo: create asaas customer on Subscriber model's save()?
+                # todo: send email to Admin to create subscriber
 
-        return response
+        return response, subscriber
 
     @staticmethod
     def import_asaas_customers():

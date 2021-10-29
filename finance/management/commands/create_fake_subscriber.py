@@ -1,6 +1,8 @@
 import json
 from django.core.management.base import BaseCommand
 
+from account.models import subscriber
+
 
 class Command(BaseCommand):
     help = 'Test command'
@@ -35,7 +37,7 @@ class Command(BaseCommand):
             "kids_race_raw": "asiática",
             "subscribing_date": "2020-02-02",
         }
-        response = AccountService.create_asaas_customer(data)
+        response, subscriber = AccountService.create_asaas_customer(data)
 
         if response.ok:
             print("Criado com sucesso")

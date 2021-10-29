@@ -2,6 +2,10 @@ body {
   background-color: #FFDDDC;
 }
 
+.stretch-height-80 {
+  min-height: 80vh;
+}
+
 .hidden {
   display: None;
 }
