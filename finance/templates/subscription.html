@@ -1,0 +1,250 @@
+{% load static %}
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quero ser assinante do Clubinho Preto!</title>
+
+    <!-- JQuery -->
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+</head>
+
+<body>
+    <img class="header-image" src="{% static 'media/clubinho_header.png' %}" alt="Imagem Clubinho"
+        title="Imagem Clubinho">
+    
+    <div class="container">
+    
+        <div class="header-info">
+            <h1>🤴🏿👸🏿</h1>
+            <h2>Que bom que você está construindo conosco um mundo melhor!</h2>
+
+            <p>
+                A cada mês, você receberá um box surpresa contendo de 1 livro com protagonismo negro + 1 surpresa
+                desenvolvida
+                por afroempreendedores. O valor da assinatura é de <span class="bold">
+                    R$49,90 (semestral) + o frete.
+                </span>
+            </p>
+
+        </div>
+
+        <p class="error-message">
+            {{ error_message }}
+        </p>
+
+        <form action="subscribe" method="post">
+            {% csrf_token %}
+            <div class="input-group">
+
+                <label for="email" class="required"> Email</label>
+                <input type="email" name="email" id="email" required>
+            </div>
+
+            <div class="input-group">
+                <label for="name" class="required"> Nome do(a) adulto(a)</label>
+                <input type="text" name="name" id="name" required>
+            </div>
+
+            <div class="input-group">
+                <label for="cpfCnpj" class="required"> CPF </label>
+                <input type="text" name="cpfCnpj" id="cpfCnpj" pattern="[0-9]{11}" class="validate" required>
+                <span class="helper-text" data-error="Preencha no formato: 12345678900" data-success=""></span>
+            </div>
+
+            <div class="input-group">
+                <label for="relatedness" class="required"> Grau de parentesco com a criança</label>
+
+                <div>
+                    <label>
+                        <input type="radio" name="relatedness" id="PA" value="PA">
+                        <span>Mãe/Pai</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="relatedness" id="GR" value="GR">
+                        <span>Avô ou Avó</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="relatedness" id="ST" value="ST">
+                        <span> Madrasta ou Padrasto</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="relatedness" id="AU" value="AU">
+                        <span> Tia ou Tio</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="relatedness" id="BR" value="BR">
+                        <span> Irmão ou Irmã</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="relatedness" id="TE" value="TE">
+                        <span> Professor(a)</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="relatedness" id="OT" value="OT" required>
+                        <span> Outro</span>
+                    </label><br />
+
+                    <!-- This div is only shown when the OT radio button is selected -->
+                    <div class="input-group hidden" id="specify-relatedness">
+                        <label for="relatedness_raw"> Qual? </label>
+                        <input type="text" name="relatedness_raw" id="relatedness_raw">
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="phone" class="required"> Telefone </label>
+                <input type="tel" name="phone" id="phone" pattern="[0-9]{8,14}" class="validate" required>
+                <span class="helper-text" data-error="Preencha no formato: 21912345678" data-success=""></span>
+
+                <span class="validity"></span>
+            </div>
+
+            <div class="input-group">
+                <label for="kids_name" class="required"> Nome da criança</label>
+                <input type="text" name="kids_name" id="kids_name" required>
+            </div>
+
+            <div class="input-group">
+                <label for="kids_age" class="required"> Idade da criança</label>
+
+                <div>
+                    <label>
+                        <input type="radio" name="kids_age" id="1" value="1" required>
+                        <span>1 ano</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="2" value="2">
+                        <span>2 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="3" value="3">
+                        <span>3 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="4" value="4">
+                        <span>4 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="5" value="5">
+                        <span>5 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="6" value="6">
+                        <span>6 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="7" value="7">
+                        <span>7 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="8" value="8">
+                        <span>8 anos</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_age" id="9" value="9">
+                        <span>9 anos</span>
+                    </label><br />
+
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="kids_gender_raw" class="required"> Gênero da criança</label>
+
+                <div>
+                    <label>
+                        <input type="radio" name="kids_gender_raw" id="MA" value="MA">
+                        <span>Masculino</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_gender_raw" id="FE" value="FE" required>
+                        <span>Feminino</span>
+                    </label><br />
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="address" class="required"> Endereço para entrega</label>
+                <input type="text" name="address" id="address" required>
+            </div>
+
+            <div class="input-group">
+                <label for="cep" class="required"> CEP</label>
+                <input type="text" name="cep" id="cep" required pattern="[0-9]{8}">
+                <span class="helper-text" data-error="Preencha no formato 12345678" data-success=""></span>
+            </div>
+
+
+            <div class="input-group">
+                <label for="delivery" class="required"> Local do frete</label>
+
+                <div>
+                    {% for key, obj in delivery_options %}
+
+                    <label>
+                        <input type="radio" name="delivery" id="{{key}}" value="{{key}}" required>
+                        <span>{{ obj.title }} - R$ {{obj.value}}</span>
+                    </label><br />
+
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="more_info"> Conta pra gente, do que a criança mais gosta? (de brincar, de vestir, de
+                    assistir,etc.)</label>
+                <textarea name="more_info" id="more_info" class="materialize-textarea"> </textarea>
+            </div>
+
+            <button class="btn waves-effect waves-light" type="submit" name="action">Enviar
+                <!-- <i class="material-icons right">send</i> -->
+            </button>
+
+        </form>
+    </div>
+
+</body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var elems = document.querySelectorAll('select');
+        var instances = M.FormSelect.init(elems, {});
+    });
+
+    // Or with jQuery
+
+    $(document).ready(function () {
+        $('select').formSelect();
+    });
+
+    // Display text-field based radio button selection
+    const divToToggle = document.getElementById('specify-relatedness')
+    for (const element of document.querySelectorAll("input[name='relatedness']")) {
+
+        element.addEventListener('click', event => {
+            if (document.getElementById('OT').checked) {
+                divToToggle.classList.remove('hidden')
+            }
+            else {
+                divToToggle.classList.add('hidden')
+            }
+        })
+    }
+
+</script>
+
+</html>

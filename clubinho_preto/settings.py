@@ -26,7 +26,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DEBUG = int(os.environ.get('DEBUG', default=0))
 ASAAS_KEY = os.environ.get('ASAAS_Key', default=None)
-ASAAS_URL = "https://www.asaas.com/api/v3/"
+ASAAS_URL = os.environ.get('ASAAS_URL', default='https://www.asaas.com/api/v3/')
+BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', default=None))
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
+    'django_celery_beat',
     'account',
     'finance',
     'box',
@@ -149,3 +151,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery Configuration Options
+CELERY_TIMEZONE = 'America/Sao_Paulo'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BROKER_URL = os.environ.get('REDIS_URL')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
+CELERY_IMPORTS = 'celery_app.celery', 
+
+CELERY_BROKER_POOL_LIMIT = 1
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json", "msgpack"]
+CELERY_INSTALLED_APPS = INSTALLED_APPS
