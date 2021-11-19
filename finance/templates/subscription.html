@@ -46,23 +46,28 @@
 
         <form action="subscribe" method="post">
             {% csrf_token %}
+
+            <!-- email -->
             <div class="input-group">
 
                 <label for="email" class="required"> Email</label>
                 <input type="email" name="email" id="email" required>
             </div>
 
+            <!-- name -->
             <div class="input-group">
                 <label for="name" class="required"> Nome do(a) adulto(a)</label>
                 <input type="text" name="name" id="name" required>
             </div>
 
+            <!-- cpf -->
             <div class="input-group">
                 <label for="cpfCnpj" class="required"> CPF </label>
                 <input type="text" name="cpfCnpj" id="cpfCnpj" pattern="[0-9]{11}" class="validate" required>
                 <span class="helper-text" data-error="Preencha no formato: 12345678900" data-success=""></span>
             </div>
 
+            <!-- relatedness -->
             <div class="input-group">
                 <label for="relatedness" class="required"> Grau de parentesco com a criança</label>
 
@@ -105,6 +110,7 @@
                 </div>
             </div>
 
+            <!-- phone -->
             <div class="input-group">
                 <label for="phone" class="required"> Telefone </label>
                 <input type="tel" name="phone" id="phone" pattern="[0-9]{8,14}" class="validate" required>
@@ -113,11 +119,13 @@
                 <span class="validity"></span>
             </div>
 
+            <!-- kids_name -->
             <div class="input-group">
                 <label for="kids_name" class="required"> Nome da criança</label>
                 <input type="text" name="kids_name" id="kids_name" required>
             </div>
 
+            <!-- kids_age -->
             <div class="input-group">
                 <label for="kids_age" class="required"> Idade da criança</label>
 
@@ -162,6 +170,7 @@
                 </div>
             </div>
 
+            <!-- kids_gender -->
             <div class="input-group">
                 <label for="kids_gender" class="required"> Gênero da criança</label>
 
@@ -181,6 +190,7 @@
                 </div>
             </div>
 
+            <!-- kids_race -->
             <div class="input-group">
                 <label for="kids_race" class="required"> Cor/raça da criança </label>
                 <div>
@@ -212,34 +222,41 @@
                 </div>
             </div>
 
+            <!-- cep -->
+            <div class="input-group">
+                <label for="postalCode" class="required"> CEP</label>
+                <input type="text" name="postalCode" id="postalCode" required pattern="[0-9]{8}" class="validate">
+                <span class="helper-text" id="postalCodeErrorMessage" data-error="" data-success=""></span>
+            </div>
+
+            <!-- address -->
             <div class="input-group">
                 <label for="address" class="required col s8"> Endereço para entrega</label>
                 <input type="text" name="address" id="address" required>
             </div>
 
+            <!-- addressNumber -->
             <div class="input-group">
                 <label for="addressNumber" class="required"> Numero</label>
-                <input type="text" name="addressNumber" id="addressNumber" required pattern="[0-9]{1,}" class="validate">
+                <input type="text" name="addressNumber" id="addressNumber" required pattern="[0-9]{1,}"
+                    class="validate">
                 <span class="helper-text" data-error="Preencha no formato: 123" data-success=""></span>
             </div>
 
+            <!-- complement -->
             <div class="input-group">
                 <label for="complement"> Complemento</label>
                 <input type="text" name="complement" id="complement">
             </div>
 
+            <!-- province -->
             <div class="input-group">
                 <label for="province" class="required"> Bairro</label>
                 <input type="text" name="province" id="province" required>
             </div>
 
-            <div class="input-group">
-                <label for="postalCode" class="required"> CEP</label>
-                <input type="text" name="postalCode" id="postalCode" required pattern="[0-9]{8}" class="validate">
-                <span class="helper-text" data-error="Preencha no formato: 11223344" data-success=""></span>
-            </div>
 
-
+            <!-- delivery -->
             <div class="input-group">
                 <label for="delivery" class="required"> Local do frete</label>
 
@@ -296,6 +313,53 @@
         })
     }
 
+    const cepValidationMessage = 'Preencha no formato: 11223344'
+    // Manually set CEP validation text
+    postalCodeErrorMessage.setAttribute('data-error', cepValidationMessage)
+
+
+    // Autofill address info based on CEP field
+    document.getElementById('postalCode').addEventListener('focusout', async (event) => {
+        // check cep length
+        // validate
+        if (event.target.value.length == 8) {
+            // check cep with viacep
+            // validate
+            const cep = event.target.value
+            const addressData = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => data);
+            
+            // console.log(addressData)
+
+            const postalCodeErrorMessage = document.getElementById('postalCodeErrorMessage')
+            document.getElementById('postalCodeErrorMessage')
+                    
+
+            if ((!addressData) || addressData.erro){
+                console.log('erro')
+                event.target.focus()
+                event.target.setCustomValidity("Invalid field.")
+                postalCodeErrorMessage.setAttribute('data-error', 'CEP inválido')
+            }
+            else {
+                postalCodeErrorMessage.setAttribute('data-error', cepValidationMessage)
+                event.target.setCustomValidity("")
+
+                // fill other fields
+                document.getElementById("address").setAttribute('value', addressData.logradouro)
+                document.getElementById("province").setAttribute('value', addressData.bairro)
+            }
+        }
+        else {
+            // cep is invalid
+            event.target.focus()
+        }
+
+
+        // autofill other fields
+
+    })
 </script>
 
 </html>
