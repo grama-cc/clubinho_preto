@@ -40,7 +40,7 @@ class AccountService:
                     cpf=data.get('cpfCnpj', None),
 
                     # same as asaas form
-                    **{key: data.get(key, None) for key in keys},
+                    **{key: customer_data.get(key, None) for key in keys},
 
                     # django only
                     ** subscriber_data
