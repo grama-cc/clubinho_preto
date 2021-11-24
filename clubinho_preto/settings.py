@@ -25,9 +25,15 @@ env.read_env()
 SECRET_KEY = os.environ.get('SECRET_KEY')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DEBUG = int(os.environ.get('DEBUG', default=0))
-ASAAS_KEY = os.environ.get('ASAAS_Key', default=None)
+
+ASAAS_KEY = os.environ.get('ASAAS_Key', default='ASAAS_KEY')
 ASAAS_URL = os.environ.get('ASAAS_URL', default='https://www.asaas.com/api/v3/')
-BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', default=None))
+BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', default='49.9'))
+
+MELHORENVIO_URL = os.environ.get('MELHORENVIO_URL', default='https://www.melhorenvio.com.br/')
+MELHORENVIO_CLIENT_ID = os.environ.get('MELHORENVIO_CLIENT_ID', default='MELHORENVIO_CLIENT_ID')
+MELHORENVIO_SECRET = os.environ.get('MELHORENVIO_SECRET', default='MELHORENVIO_SECRET')
+MELHORENVIO_REDIRECT_URL = os.environ.get('MELHORENVIO_REDIRECT_URL', default='MELHORENVIO_REDIRECT_URL')
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
