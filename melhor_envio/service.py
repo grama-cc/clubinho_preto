@@ -60,9 +60,16 @@ class MelhorEnvioService():
         if token:
             return token
         else:
-            # todo: check refresh token
-            # todo: check refresh token expiration on cache and increase
-            # todo: if not refresh_token: reauthenticate
+            refresh_token = cache.get("refresh_token")
+            if refresh_token:
+                response = MelhorEnvioService.set_refresh_token(refresh_token)
+                if response.ok:
+                    token = response.json().get("access_token")
+                    return token
+            else:     
+                # todo: if not refresh_token: reauthenticate via 'AuthorizeApplicationView' api
+                pass
+
             print("\t\tSEM TOKEN")
             return None
 
