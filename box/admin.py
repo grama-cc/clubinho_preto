@@ -9,7 +9,7 @@ class BoxItemAdmin(admin.ModelAdmin):
 
 
 class BoxAdmin(admin.ModelAdmin):
-    list_display = "id", "name", "description", "width", "height", "length", "weight",
+    list_display = "id", "name", "description", "width", "height", "length", "weight", "insurance_value",
     search_fields = "name", "description",
     filter_horizontal = "items",
 
@@ -19,16 +19,10 @@ class ShippingItemAdmin(admin.ModelAdmin):
 
 
 class ShippingAdmin(admin.ModelAdmin):
-    list_display = "id", "box", "date_created", "shipping_option_selected", "insurance_value", "recipient", "processado"
-    list_filter = "recipient", "box", "shipping_option_selected",
-    filter_horizontal = "shipping_options",
+    list_display = "id", "box", "recipient", "date_created", "shipping_option_selected",
+    list_filter = "recipient", "box", 
+    # filter_horizontal = "shipping_options",
     readonly_fields = "date_created",
-    
-
-    def processado(self, obj):
-        return obj.processed
-
-    processado.boolean = True
 
 
 admin.site.register(Box, BoxAdmin)

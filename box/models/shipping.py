@@ -17,6 +17,18 @@ class ShippingOption(models.Model):
 
     melhor_envio_id = models.PositiveIntegerField(blank=True, null=True, verbose_name="Melhor Envio ID")
 
+    def __str__(self):
+        msg = ""
+        if self.company_name:
+            msg += self.company_name + " - "
+        if self.name:
+            msg += self.name
+        if self.price:
+            msg += " - R$ " + str(self.price)
+        if msg:
+            return msg
+        return super().__str__()
+        
     class Meta:
         verbose_name = "Opção de Envio"
         verbose_name_plural = "Opções de Envio"
@@ -30,10 +42,6 @@ class Shipping(models.Model):
     recipient = models.ForeignKey("account.Subscriber", on_delete=models.PROTECT, verbose_name="Destinatário",
                                   related_name="shippings")
 
-    insurance_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
-                                          verbose_name="Valor do Seguro")
-    receipt = models.BooleanField(default=False, verbose_name="Aviso de recebimento")
-    own_hand = models.BooleanField(default=False, verbose_name="Mãos próprias")
 
     shipping_options = models.ManyToManyField("ShippingOption", blank=True, verbose_name="Opções de Envio",
                                               related_name="+")

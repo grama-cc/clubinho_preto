@@ -24,6 +24,10 @@ class Box(models.Model):
 
     items = models.ManyToManyField("BoxItem", blank=True, verbose_name="Itens")
 
+    insurance_value = models.FloatField(default=0, verbose_name="Valor do Seguro")
+    receipt = models.BooleanField(default=False, verbose_name="Aviso de recebimento")
+    own_hand = models.BooleanField(default=False, verbose_name="Mãos próprias")
+
     def __str__(self):
         return self.name
 
