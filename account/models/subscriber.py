@@ -59,6 +59,8 @@ class Subscriber(models.Model):
         verbose_name_plural = "Assinantes"
 
     def __str__(self) -> str:
+        if self.name:
+            return self.name
         return self.email
 
     def save(self, *args, **kwargs) -> None:
