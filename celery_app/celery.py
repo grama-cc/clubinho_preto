@@ -51,3 +51,8 @@ def task_import_asaas_customers():
     from account.service import AccountService
     created, errors, skipped = AccountService.import_asaas_customers()
     return f'{created} clientes criados, {errors} erros'
+
+@app.task
+def task_create_shipping_options(shipping_ids):
+    from box.tasks import create_shipping_options
+    return create_shipping_options(shipping_ids)

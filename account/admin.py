@@ -13,7 +13,7 @@ def get_cell(sheet, column, row):
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'relatedness', 'kids_race', 'asaas_customer_id')
+    list_display = ('id', 'name', 'email', 'cep', 'relatedness', 'kids_race', 'asaas_customer_id')
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
 
