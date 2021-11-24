@@ -2,9 +2,17 @@ import requests
 from clubinho_preto.settings import (MELHORENVIO_CLIENT_ID,
                                      MELHORENVIO_REDIRECT_URL,
                                      MELHORENVIO_SECRET, MELHORENVIO_URL)
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views import View
+
+MELHORENVIO_CACHE_TIME = 2592000
+
+
+def save_token_to_cache(data):
+    cache.set("access_token", data.get("access_token"), MELHORENVIO_CACHE_TIME)
+    cache.set("refresh_token", data.get("refresh_token"), MELHORENVIO_CACHE_TIME)
 
 
 class AuthorizeApplicationView(View):
@@ -28,6 +36,10 @@ class GetTokenView(View):
                 "code": {code},
             },
         )
+        if response.ok:
+            # save tokens to cache
+            data = response.json()
+            save_token_to_cache(data)
 
         return HttpResponse(
             content=response.content, status=response.status_code, content_type=response.headers["Content-Type"]
@@ -47,6 +59,11 @@ class RefreshTokenView(View):
                 "refresh_token": {refresh_token},
             },
         )
+
+        if response.ok:
+            # save tokens to cache
+            data = response.json()
+            save_token_to_cache(data)
 
         return HttpResponse(
             content=response.content, status=response.status_code, content_type=response.headers["Content-Type"]
