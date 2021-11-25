@@ -52,18 +52,43 @@ class ShippingItemAdmin(admin.ModelAdmin):
 
 
 class ShippingAdmin(admin.ModelAdmin):
-    list_display = "id", "box", "recipient", "date_created", "shipping_option_selected",
-    list_filter = "recipient", "box", 
+    list_display = "id", "box", "recipient", "date_created", "shipping_option_selected", "user_ok", "has_label",
+    list_filter = "recipient", "box", # todo: filter by label
     # filter_horizontal = "shipping_options",
     readonly_fields = "date_created",
-    actions = 'generate_shipping_options',
+    actions = 'generate_shipping_options', 'generate_labels', # 'clear_labels',
+
+    def user_ok(self, obj):
+        if obj.recipient:
+            return obj.recipient.can_send_package()
+        return False
+    user_ok.boolean = True
+    user_ok.short_description = "Usuário ok?"
+
+    def has_label(self, obj):
+        return bool(obj.label) and bool(obj.label.keys())
+    has_label.boolean = True
+    has_label.short_description = "Etiqueta"
 
     def generate_shipping_options(self, request, queryset):
         from celery_app.celery import task_create_shipping_options
         ids = list(queryset.values_list('id', flat=True))
         task_create_shipping_options.delay(ids)
-    
     generate_shipping_options.short_description = "Gerar opções de envio"
+
+    def generate_labels(self, request, queryset):
+        from celery_app.celery import task_add_deliveries_to_cart
+        task_add_deliveries_to_cart.delay([s.id for s in queryset])
+        self.message_user(request, f"As etiquetas estão sendo geradas. Isso pode demorar um pouco.")
+    generate_labels.short_description = "Gerar etiquetas"
+
+    ### This method is disbled because deleting label information means 
+    ### that you'd have to remove that label from MelhorEnvio cart. 
+    ### This is not implemented yet. #todo
+    # def clear_labels(self, request, queryset):
+    #     queryset.update(label=None)
+    #     self.message_user(request, f"{len(queryset)} etiquetas foram apagadas.")
+    # clear_labels.short_description = "Limpar etiquetas"
 
 admin.site.register(Box, BoxAdmin)
 admin.site.register(BoxItem, BoxItemAdmin)

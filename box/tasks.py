@@ -6,9 +6,10 @@ def create_shipping_options(shipping_ids):
     Also saves the cheapest shipping option as the selected one
     """
 
-    from box.models import Shipping, ShippingOption
-    from melhor_envio.service import MelhorEnvioService
     from clubinho_preto.settings import MELHORENVIO_SHIPPING_FROM
+    from melhor_envio.service import MelhorEnvioService
+
+    from box.models import Shipping, ShippingOption
 
     shippings = Shipping.objects.filter(id__in=shipping_ids).exclude(recipient__cep__isnull=True)
     for shipping in shippings:
@@ -31,6 +32,9 @@ def create_shipping_options(shipping_ids):
             create_list = []
             fields = "name", "price", "delivery_time", "id"
             for shipping_info in shipping_options:
+
+                # TODO: Ignore "Azul Cargo" company as it does not generate labels via API
+
                 data = {field: shipping_info.get(field, None) for field in fields}
 
                 shipping_option = ShippingOption(
@@ -60,3 +64,46 @@ def create_shipping_options(shipping_ids):
         else:
             # todo
             pass
+
+
+def add_deliveries_to_cart(shipping_ids):
+    import json
+    from datetime import datetime
+
+    from account.models import Sender
+    from melhor_envio.service import MelhorEnvioService
+
+    from box.models.shipping import Shipping
+    
+    # todo: check if recipient is valid (has all fields)
+
+    # Select first sender
+    sender = Sender.objects.all().order_by('id').values()[0]
+    shippings = Shipping.objects.filter(
+        id__in=shipping_ids,
+        shipping_option_selected__isnull=False,
+        box__isnull=False,
+        recipient__isnull=False
+    )
+    if shippings and sender:
+        success = MelhorEnvioService.add_items_to_cart(shippings, sender)
+        if success:
+            return True 
+            
+    elif not sender:
+        return "Missing Sender"
+    elif not shippings:
+        return "Missing Shippings"
+
+
+def checkout_cart():
+    """
+    Checkout MelhorEnvio cart.
+    After this comes the label generation step
+    """
+
+    pass
+
+
+def generate_labels(labels_ids):
+    pass

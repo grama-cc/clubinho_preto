@@ -15,9 +15,16 @@ def get_cell(sheet, column, row):
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'cep', 'relatedness', 'kids_race', 'asaas_customer_id')
+    list_display = ('id', 'name', 'email', 'cep', '_can_send_package', 'relatedness', 'kids_race', 'asaas_customer_id')
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
+    # todo: filter by "can_send_package"
+
+    def _can_send_package(self, obj):
+        return obj.can_send_package()
+
+    _can_send_package.boolean = True
+    _can_send_package.short_description = 'Campos ok?'
 
     def importar_planilha(modeladmin, request, queryset):
         path = 'account/data/info.xlsx'

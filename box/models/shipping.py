@@ -50,6 +50,8 @@ class Shipping(models.Model):
         "ShippingOption", null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Opção de Envio Selecionada",
         related_name="+",)  # todo: limit_choices_to
 
+    label = models.JSONField(null=True, blank=True, verbose_name="Dados da Etiqueta")
+
     def __str__(self):
         if self.id:
             return f"{self.id}"

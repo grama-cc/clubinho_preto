@@ -56,3 +56,8 @@ def task_import_asaas_customers():
 def task_create_shipping_options(shipping_ids):
     from box.tasks import create_shipping_options
     return create_shipping_options(shipping_ids)
+
+@app.task
+def task_add_deliveries_to_cart(shipping_ids):
+    from box.tasks import add_deliveries_to_cart
+    return add_deliveries_to_cart(shipping_ids)

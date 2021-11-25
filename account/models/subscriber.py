@@ -41,6 +41,10 @@ class Subscriber(models.Model):
     province = models.CharField(max_length=255, verbose_name="bairro", blank=True, null=True)
     cep = models.CharField(max_length=255, verbose_name="CEP", blank=True, null=True)
     delivery = models.CharField(max_length=255, verbose_name="frete para", blank=True, null=True)
+    city = models.CharField(max_length=255, verbose_name="cidade", blank=True, null=True)
+    state_initials = models.CharField(max_length=2, blank=True, null=True, verbose_name='UF')
+    note = models.CharField(max_length=255, blank=True, null=True, verbose_name='Observações de endereço')
+
 
     more_info = models.TextField(verbose_name="conta pra gente, do que a criança mais gosta", blank=True, null=True)
     relatedness = models.CharField(max_length=2, choices=RELATEDNESS.choices, default=RELATEDNESS.PARENT, blank=True, null=True)
@@ -67,3 +71,10 @@ class Subscriber(models.Model):
         if not self.subscribing_date:
             self.subscribing_date = timezone.now()
         return super().save(*args, **kwargs)
+    
+    def can_send_package(self):
+        fields = 'name', 'email', 'phone', 'address', 'complement', 'cpf', 'addressNumber', 'province', 'cep', 'city', 'state_initials',        
+        for field in fields:
+            if not getattr(self, field):
+                return False
+        return True
