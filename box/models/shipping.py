@@ -64,3 +64,14 @@ class Shipping(models.Model):
     @property
     def processed(self):
         return self.shipping_options.count() > 0
+
+
+    def delete_label(self):
+        if self.label and self.label.get('id'):
+            from melhor_envio.service import MelhorEnvioService
+
+            response = MelhorEnvioService.remove_label_from_cart(self.label.get('id'))            
+            if response.ok or response.status_code == 404:
+                self.label = None
+                self.save()
+                return True

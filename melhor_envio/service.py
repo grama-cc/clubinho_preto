@@ -213,3 +213,14 @@ class MelhorEnvioService():
                     print(f"1-Não conseguiu adicionar itens no carrinho {response.status_code}")    
             else:
                 print(f"2-Não conseguiu adicionar itens no carrinho {response.status_code}")
+
+    @staticmethod
+    def remove_label_from_cart(label_id):
+        bearer_token = MelhorEnvioService.get_token()
+        headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+
+        return requests.delete(
+            url=f"{MELHORENVIO_URL}api/v2/me/cart/{label_id}",
+            headers=headers,
+        )
+        

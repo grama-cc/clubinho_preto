@@ -55,8 +55,8 @@ class ShippingAdmin(admin.ModelAdmin):
     list_display = "id", "box", "recipient", "date_created", "shipping_option_selected", "user_ok", "has_label",
     list_filter = "recipient", "box", # todo: filter by label
     # filter_horizontal = "shipping_options",
-    readonly_fields = "date_created",
-    actions = 'generate_shipping_options', 'generate_labels', # 'clear_labels',
+    readonly_fields = "date_created", "label"
+    actions = 'generate_shipping_options', 'generate_labels', 'clear_labels',
 
     def user_ok(self, obj):
         if obj.recipient:
@@ -82,13 +82,13 @@ class ShippingAdmin(admin.ModelAdmin):
         self.message_user(request, f"As etiquetas estão sendo geradas. Isso pode demorar um pouco.")
     generate_labels.short_description = "Gerar etiquetas"
 
-    ### This method is disbled because deleting label information means 
-    ### that you'd have to remove that label from MelhorEnvio cart. 
-    ### This is not implemented yet. #todo
-    # def clear_labels(self, request, queryset):
-    #     queryset.update(label=None)
-    #     self.message_user(request, f"{len(queryset)} etiquetas foram apagadas.")
-    # clear_labels.short_description = "Limpar etiquetas"
+    def clear_labels(self, request, queryset):
+        from celery_app.celery import task_remove_label_from_cart
+        queryset = queryset.filter(label__isnull=False)
+        for item in queryset:
+            task_remove_label_from_cart.delay(item.id)
+        self.message_user(request, f"{len(queryset)} estiqueta estão sendo apagadas, isso pode demorar um pouco.")
+    clear_labels.short_description = "Limpar etiquetas"
 
 admin.site.register(Box, BoxAdmin)
 admin.site.register(BoxItem, BoxItemAdmin)
