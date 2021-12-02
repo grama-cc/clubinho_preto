@@ -44,7 +44,7 @@
             {{ error_message }}
         </p>
 
-        <form action="subscribe" method="post">
+        <form action="/" method="post">
             {% csrf_token %}
 
             <!-- email -->
@@ -232,7 +232,7 @@
             <!-- address -->
             <div class="input-group">
                 <label for="address" class="required col s8"> Endereço para entrega</label>
-                <input type="text" name="address" id="address" required>
+                <input type="text" name="address" id="address" required readonly>
             </div>
 
             <!-- addressNumber -->
@@ -252,7 +252,19 @@
             <!-- province -->
             <div class="input-group">
                 <label for="province" class="required"> Bairro</label>
-                <input type="text" name="province" id="province" required>
+                <input type="text" name="province" id="province" required readonly>
+            </div>
+            
+            <!-- city -->
+            <div class="input-group">
+                <label for="city" class="required"> Cidade </label>
+                <input type="text" name="city" id="city" required readonly>
+            </div>
+            
+            <!-- state_initials -->
+            <div class="input-group">
+                <label for="state_initials" class="required"> UF </label>
+                <input type="text" name="state_initials" id="state_initials" required readonly>
             </div>
 
 
@@ -314,7 +326,7 @@
 
 
     // Autofill address info based on CEP field
-    document.getElementById('postalCode').addEventListener('focusout', async (event) => {
+    document.getElementById('postalCode').addEventListener('input', async (event) => {
         // check cep length
         // validate
         if (event.target.value.length == 8) {
@@ -344,15 +356,23 @@
                 // fill other fields
                 document.getElementById("address").setAttribute('value', addressData.logradouro)
                 document.getElementById("province").setAttribute('value', addressData.bairro)
+                document.getElementById("state_initials").setAttribute('value', addressData.uf)
+                document.getElementById("city").setAttribute('value', addressData.localidade)
+
+                const uf = addressData.uf
+                const cidade = addressData.localidade
+                if (['SP', 'ES', 'MG'].includes(uf))
+                    document.getElementById('sp_es_mg').checked = true
+                else if (cidade == 'Rio de Janeiro')
+                    document.getElementById('rio').checked = true
+                else if (uf == 'RJ') // rio, mas não da cidade
+                    document.getElementById('metropolitana').checked = true
+
+
             }
         }
-        else {
-            // cep is invalid
-            event.target.focus()
-        }
 
 
-        // autofill other fields
 
     })
 </script>

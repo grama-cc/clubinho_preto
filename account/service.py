@@ -18,7 +18,8 @@ class AccountService:
 
         # separate asaas data from our data
         subscriber_keys = ['relatedness', 'more_info', 'relatedness', 'relatedness_raw', 'kids_name',
-                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 'subscribing_date', 'delivery']
+                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 'subscribing_date', 'delivery', 
+                           'city', 'state_initials']
 
         subscriber_data = {key: customer_data[key] for key in customer_data if key in subscriber_keys}
 

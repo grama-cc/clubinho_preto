@@ -73,7 +73,7 @@ class Subscriber(models.Model):
         return super().save(*args, **kwargs)
     
     def can_send_package(self):
-        fields = 'name', 'email', 'phone', 'address', 'complement', 'cpf', 'addressNumber', 'province', 'cep', 'city', 'state_initials',        
+        fields = 'name', 'email', 'phone', 'address', 'cpf', 'addressNumber', 'province', 'cep', 'city', 'state_initials',
         for field in fields:
             if not getattr(self, field):
                 return False
