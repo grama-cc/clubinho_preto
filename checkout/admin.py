@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.core.checks import messages
 from .models import Label, Purchase
 from django.utils.html import mark_safe  # Newer versions
-from celery_app.celery import task_print_labels, task_cart_checkout
+from celery_app.celery import task_print_labels
 # Register your models here.
 
 
@@ -13,18 +13,13 @@ class LabelAdmin(admin.ModelAdmin):
     def is_paid(self, obj):
         return bool(obj.purchase)
     is_paid.boolean = True
-    is_paid.short_description = 'Pago?'
-
-    def checkout(self, request, queryset):
-        ids = list(queryset.values_list('id', flat=True))
-        task_cart_checkout.delay(ids)
-        self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas")
-    checkout.short_description = 'Comprar etiquetas'
+    is_paid.short_description = 'Pago?'    
 
 
 class PurchaseAdmin(admin.ModelAdmin):
-    list_display = 'id', 'total', 'status', 'link'
+    list_display = 'id', 'created_at', 'total', 'status', 'link'
     actions = 'print_labels',
+    ordering = '-created_at',
 
     def link(self, obj):
         if obj.print_url:

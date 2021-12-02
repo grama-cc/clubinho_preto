@@ -63,17 +63,6 @@ def task_add_deliveries_to_cart(shipping_ids):
 
 
 @app.task
-def task_remove_label_from_cart(shipping_id):
-    from box.models import Shipping
-    try:
-        shipping = Shipping.objects.get(id=shipping_id)
-        if shipping.delete_label():
-            return f'Etiqueta de {shipping_id} removida'
-        return f'Não foi possível remover a etiqueta de {shipping_id}'
-    except Shipping.DoesNotExist:
-        return 'Envio não encontrado'
-
-@app.task
 def task_cart_checkout(label_ids):
     from melhor_envio.service import MelhorEnvioService
     return MelhorEnvioService.cart_checkout(label_ids)

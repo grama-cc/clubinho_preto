@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from django.db.models.signals import post_save
 
 class Purchase(models.Model):
     id = models.CharField(max_length=255, primary_key=True)
@@ -22,3 +22,12 @@ class Purchase(models.Model):
         if not self.id:
             self.created_at = timezone.now()
         return super().save(*args, **kwargs)
+
+def get_label_print_link(sender, instance, created, **kwargs):
+    if created:
+        from celery_app.celery import task_print_labels
+        task_print_labels.delay(instance.id)
+
+post_save.connect(get_label_print_link, sender=Purchase)
+        
+        

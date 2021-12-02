@@ -211,7 +211,6 @@ class MelhorEnvioService():
                 method="post",
                 data=data
             )
-
             if response.ok:
                 try:
                     fields = 'id','created_at','price','format','status','protocol','volumes',
@@ -227,6 +226,7 @@ class MelhorEnvioService():
                     failure += 1
                     print(f"1-Não conseguiu adicionar itens no carrinho {response.status_code}")
             else:
+                failure += 1
                 print(f"2-Não conseguiu adicionar itens no carrinho {response.status_code}")
 
         return f"{success} itens adicionados ao carrinho com sucesso e {failure} itens não adicionados"

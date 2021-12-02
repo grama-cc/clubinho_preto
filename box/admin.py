@@ -5,7 +5,7 @@ from django.core.checks import messages
 from .models import Box, BoxItem, Shipping, ShippingOption
 from account.models import Subscriber
 from django.utils import timezone
-from celery_app.celery import task_create_shipping_options
+from celery_app.celery import task_create_shipping_options, task_cart_checkout
 
 
 class BoxItemAdmin(admin.ModelAdmin):
@@ -56,7 +56,7 @@ class ShippingAdmin(admin.ModelAdmin):
     list_filter = "recipient", "box", # todo: filter by has label
     # filter_horizontal = "shipping_options",
     readonly_fields = "date_created", "label"
-    actions = 'generate_shipping_options', 'generate_labels', 'clear_labels',
+    actions = 'generate_shipping_options', 'generate_labels', 'clear_labels', 'checkout'
 
     def user_ok(self, obj):
         if obj.recipient:
@@ -83,12 +83,17 @@ class ShippingAdmin(admin.ModelAdmin):
     generate_labels.short_description = "Gerar etiquetas"
 
     def clear_labels(self, request, queryset):
-        from celery_app.celery import task_remove_label_from_cart
-        queryset = queryset.filter(label__isnull=False)
-        for item in queryset:
-            task_remove_label_from_cart.delay(item.id)
-        self.message_user(request, f"{len(queryset)} estiqueta estão sendo apagadas, isso pode demorar um pouco.")
+        from checkout.models import Label
+        count, _ = Label.objects.filter(shipping__in=queryset).delete()
+        self.message_user(request, f"{count} etiquetas foram apagadas.")
     clear_labels.short_description = "Limpar etiquetas"
+
+    def checkout(self, request, queryset):
+        ids = list(queryset.values_list('label', flat=True))
+        ids = list(filter(lambda _id: bool(_id), ids)) # remove null if exists
+        task_cart_checkout.delay(ids)
+        self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas")
+    checkout.short_description = 'Comprar etiquetas'
 
 admin.site.register(Box, BoxAdmin)
 admin.site.register(BoxItem, BoxItemAdmin)
