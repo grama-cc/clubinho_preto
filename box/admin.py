@@ -53,7 +53,7 @@ class ShippingItemAdmin(admin.ModelAdmin):
 
 class ShippingAdmin(admin.ModelAdmin):
     list_display = "id", "box", "recipient", "date_created", "shipping_option_selected", "user_ok", "has_label",
-    list_filter = "recipient", "box", # todo: filter by label
+    list_filter = "recipient", "box", # todo: filter by has label
     # filter_horizontal = "shipping_options",
     readonly_fields = "date_created", "label"
     actions = 'generate_shipping_options', 'generate_labels', 'clear_labels',
@@ -66,7 +66,7 @@ class ShippingAdmin(admin.ModelAdmin):
     user_ok.short_description = "Usuário ok?"
 
     def has_label(self, obj):
-        return bool(obj.label) and bool(obj.label.keys())
+        return hasattr(obj, 'label')
     has_label.boolean = True
     has_label.short_description = "Etiqueta"
 

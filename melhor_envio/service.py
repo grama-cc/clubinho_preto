@@ -1,8 +1,10 @@
 import json
 
 import requests
-from clubinho_preto.settings import (MELHORENVIO_CLIENT_ID, MELHORENVIO_SECRET,
-                                     MELHORENVIO_URL, MELHORENVIO_REDIRECT_URL)
+from checkout.models import Label, Purchase
+from clubinho_preto.settings import (MELHORENVIO_CLIENT_ID,
+                                     MELHORENVIO_REDIRECT_URL,
+                                     MELHORENVIO_SECRET, MELHORENVIO_URL)
 from django.core.cache import cache
 
 MELHORENVIO_CACHE_TIME = 2592000
@@ -16,7 +18,7 @@ def save_token_to_cache(data):
 class MelhorEnvioService():
 
     @staticmethod
-    def melhor_envio_request(url, method='GET', data={}):
+    def melhor_envio_request(url, method='get', data={}):
         bearer_token = MelhorEnvioService.get_token()
         headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
 
@@ -89,8 +91,6 @@ class MelhorEnvioService():
         """
         Make a request to Melhor Envio API and get avaliable shipping options with passed params
         """
-        bearer_token = MelhorEnvioService.get_token()
-        headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
         data = {
             "from": {
                 "postal_code": postal_from
@@ -110,10 +110,10 @@ class MelhorEnvioService():
                 "own_hand": own_hand
             }
         }
-        response = requests.post(
-            url=f"{MELHORENVIO_URL}api/v2/me/shipment/calculate",
-            headers=headers,
-            data=json.dumps(data)
+        response = MelhorEnvioService.melhor_envio_request(
+            url="api/v2/me/shipment/calculate",
+            method="post",
+            data=data
         )
 
         if response.ok:
@@ -136,7 +136,7 @@ class MelhorEnvioService():
         """
         success = 0
         failure = 0
-        for shipping in shippings:
+        for shipping in shippings.filter(label__isnull=True):
 
             recipient = shipping.recipient
             same_name_subscriber_fields = 'name', 'email', 'phone', 'address', 'complement',
@@ -205,20 +205,21 @@ class MelhorEnvioService():
                 }
             }
 
-            bearer_token = MelhorEnvioService.get_token()
-            headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-            # print(data)
-            response = requests.post(
-                url=f"{MELHORENVIO_URL}api/v2/me/cart/",
-                headers=headers,
-                data=json.dumps(data)
+            response = MelhorEnvioService.melhor_envio_request(
+                url="api/v2/me/cart/",
+                method="post",
+                data=data
             )
 
             if response.ok:
                 try:
-                    label = response.json()
-                    shipping.label = label
-                    shipping.save()
+                    fields = 'id','created_at','price','format','status','protocol','volumes',
+                    info = response.json()
+                    Label.objects.create(
+                        shipping=shipping,
+                        full_info=info,
+                        **{field: info.get(field) for field in fields}
+                    )
                     success += 1
 
                 except:
@@ -249,9 +250,24 @@ class MelhorEnvioService():
         if response.ok:
             try:
                 checkout_data = response.json()
+                
                 orders = checkout_data.get('purchase', {}).get('orders', [])
                 label_ids = [order.get('id') for order in orders]
-                # todo: these are eligible for shipping label generation
-                return response
-            except:
+                
+                fields = 'id', 'created_at', 'total', 'status'
+                data = {}
+                for field in fields:
+                    value = checkout_data.get('purchase',{}).get(field)
+                    if value:
+                        data[field] = value
+                purchase = Purchase.objects.create(
+                    **data,
+                    full_info=checkout_data
+                )
+
+                return Label.objects.filter(id__in=label_ids).update(purchase=purchase, status='released')
+                
+            except Exception as e:
+                raise e
                 return False
+        return False

@@ -50,8 +50,6 @@ class Shipping(models.Model):
         "ShippingOption", null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Opção de Envio Selecionada",
         related_name="+",)  # todo: limit_choices_to
 
-    label = models.JSONField(null=True, blank=True, verbose_name="Dados da Etiqueta")
-
     def __str__(self):
         if self.id:
             return f"{self.id}"
@@ -67,11 +65,8 @@ class Shipping(models.Model):
 
 
     def delete_label(self):
-        if self.label and self.label.get('id'):
-            from melhor_envio.service import MelhorEnvioService
-
-            response = MelhorEnvioService.remove_label_from_cart(self.label.get('id'))            
-            if response.ok or response.status_code == 404:
-                self.label = None
-                self.save()
+        from melhor_envio.service import MelhorEnvioService
+        if hasattr(self, 'label'):
+            response = MelhorEnvioService.remove_label_from_cart(self.label.id)            
+            if response.ok or response.status_code == 404: # if not found it does not exist
                 return True

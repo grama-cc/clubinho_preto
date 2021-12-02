@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     
     'account',
     'box',
+    'checkout',
     'finance',
     'melhor_envio',
 ]
