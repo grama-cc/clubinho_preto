@@ -270,4 +270,36 @@ class MelhorEnvioService():
             except Exception as e:
                 raise e
                 return False
-        return False
+        return False    
+
+    @staticmethod
+    def print_labels(label_ids):
+
+        data = {
+            'orders': [str(label_id) for label_id in label_ids]
+        }
+        response =  MelhorEnvioService.melhor_envio_request(
+            url=f"api/v2/me/shipment/generate",
+            method='post',
+            data=data
+        )
+        if response.ok:
+            try:
+                response.json() # may return a html page
+            except:
+                print("could not generate")
+                return False
+
+        data['mode'] = 'public'
+
+        response = MelhorEnvioService.melhor_envio_request(
+            url=f"api/v2/me/shipment/print",
+            method='post',
+            data=data
+        )
+        if response.ok:
+            try:
+                return response.json()
+            except:
+                print("could not print")
+                return False
