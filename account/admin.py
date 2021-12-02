@@ -1,8 +1,9 @@
 import os
 from django.contrib import admin, messages
 from openpyxl import load_workbook
-from .models.subscriber import Subscriber
+from .models import Subscriber, Sender
 from django.contrib.admin import register
+
 
 def get_cell(sheet, column, row):
     value = sheet["{}{}".format(str(column), str(row))].value
@@ -10,12 +11,20 @@ def get_cell(sheet, column, row):
         return value.strip()
     return value
 
+
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'relatedness_raw', 'kids_race_raw', 'asaas_customer_id')
+    list_display = ('id', 'name', 'email', 'cep', '_can_send_package', 'relatedness', 'kids_race', 'asaas_customer_id')
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
+    # todo: filter by "can_send_package"
+
+    def _can_send_package(self, obj):
+        return obj.can_send_package()
+
+    _can_send_package.boolean = True
+    _can_send_package.short_description = 'Campos ok?'
 
     def importar_planilha(modeladmin, request, queryset):
         path = 'account/data/info.xlsx'
@@ -25,19 +34,19 @@ class SubscriberAdmin(admin.ModelAdmin):
             count = 0
             errors = 0
             row = 2
-     
+
             for i in range(1120):
                 data = {
-                    "subscribing_date" : get_cell(sheet, 'A', row),
-                    "name" : get_cell(sheet, 'C', row),
-                    "email" : get_cell(sheet, 'B', row),
-                    "relatedness_raw" : get_cell(sheet, 'D', row),
-                    "phone" : get_cell(sheet, 'F', row),
-                    "kids_age" : int(get_cell(sheet, 'G', row).replace('especial', '0').replace(' anos', '').replace(' ano', '').replace('4 e 6', '6')),
-                    "kids_race_raw" : get_cell(sheet, 'H', row),
-                    "address" : get_cell(sheet, 'I', row),
-                    "cep" : get_cell(sheet, 'J', row),
-                    "more_info" : get_cell(sheet, 'K', row),
+                    "subscribing_date": get_cell(sheet, 'A', row),
+                    "name": get_cell(sheet, 'C', row),
+                    "email": get_cell(sheet, 'B', row),
+                    "relatedness_raw": get_cell(sheet, 'D', row),
+                    "phone": get_cell(sheet, 'F', row),
+                    "kids_age": int(get_cell(sheet, 'G', row).replace('especial', '0').replace(' anos', '').replace(' ano', '').replace('4 e 6', '6')),
+                    "kids_race_raw": get_cell(sheet, 'H', row),
+                    "address": get_cell(sheet, 'I', row),
+                    "cep": get_cell(sheet, 'J', row),
+                    "more_info": get_cell(sheet, 'K', row),
                 }
 
                 if data["email"]:
@@ -55,7 +64,6 @@ class SubscriberAdmin(admin.ModelAdmin):
             return
         messages.warning(request, f'O arquivo `{path}` não existe')
 
-
     def import_subscribers(modeladmin, request, queryset):
         from account.service import AccountService
         created, errors, skipped = AccountService.import_asaas_customers()
@@ -63,3 +71,28 @@ class SubscriberAdmin(admin.ModelAdmin):
         modeladmin.message_user(request, f'{created} assinantes criadas, {errors} erros, {skipped} já existiam')
 
     import_subscribers.short_description = 'Importar assinantes Asaas'
+
+
+@register(Sender)
+class SenderAdmin(admin.ModelAdmin):
+    list_display = "name", "phone", "email", "address",
+
+    fieldsets = (
+        ("Informações Gerais",
+         {"fields": ("name", "phone", "email", )}),
+
+        ("Documentos",
+         {"fields": ("document", "company_document", "state_register")}),
+
+        ("Endereço",
+         {"fields": ("address", "complement", "number", "district", "city", "country_id", "postal_code", )}),
+
+        (None,
+         {"fields": ("note",)}),
+    )
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

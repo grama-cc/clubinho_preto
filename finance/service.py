@@ -79,7 +79,7 @@ class FinanceService:
             customer_id = subscription.get('customer')
             subscriber = Subscriber.objects.filter(asaas_customer_id=customer_id).first() or None
             data = {
-                'subscriber': subscriber.id if subscriber else None,
+                'subscriber': subscriber if subscriber else None,
                 'value': subscription.get('value'),
                 'date': subscription.get('dateCreated'),
                 'asaas_id': subscription.get('id'),
@@ -92,7 +92,8 @@ class FinanceService:
             try:
                 print(Subscription.objects.create(**data))
                 created += 1
-            except:
+            except Exception as e:
+                print(f"Subscription import error {e}")
                 errors += 1
 
         return [created, errors]
@@ -138,3 +139,17 @@ class FinanceService:
         response = FinanceService.asaas_resquest(url, method='POST', data=data)
         return response
 
+    def create_asaas_subscription(customer_id, delivery_choice):
+        total_value = float(BASE_SUBSCRIPTION_VALUE) + float(delivery_choice.get('value'))
+        url = 'subscriptions'
+        data = {
+            "customer": customer_id,
+            "billingType": "UNDEFINED",
+            "value": total_value,
+            "dueDate": (datetime.now()+timedelta(days=1)).strftime('%Y-%m-%d'),
+            "description": f"Assinatura Clubinho Preto + frete para { delivery_choice.get('title')}",
+            "cycle": "MONTHLY"
+        }
+
+        response = FinanceService.asaas_resquest(url, method='POST', data=data)
+        return response

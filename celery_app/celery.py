@@ -1,7 +1,6 @@
 import os
 from celery.schedules import crontab
 from celery import Celery
-from account.tasks import account_task
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubinho_preto.settings')
@@ -14,8 +13,15 @@ app.conf.broker_transport_options = {'visibility_timeout': 3600}
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
 
+    
+    
     sender.add_periodic_task(
         crontab(minute=0, hour='*/12'),
+        task_import_asaas_customers.s(),
+    )
+
+    sender.add_periodic_task(
+        crontab(minute=15, hour='*/12'),
         task_import_subscriptions.s(),
     )
 
@@ -24,6 +30,7 @@ def setup_periodic_tasks(sender, **kwargs):
         task_update_subscriptions.s(),
     )
 
+    # todo: update customers
 
 @app.task
 def task_import_subscriptions():
@@ -36,3 +43,43 @@ def task_update_subscriptions():
     from finance.service import FinanceService
     updated, errors = FinanceService.update_asaas_subscriptions()
     return f'{updated} assinaturas atualizadas, {errors} erros'
+
+
+@app.task
+def task_import_asaas_customers():
+    from account.service import AccountService
+    created, errors, skipped = AccountService.import_asaas_customers()
+    return f'{created} clientes criados, {errors} erros'
+
+@app.task
+def task_create_shipping_options(shipping_ids):
+    from box.tasks import create_shipping_options
+    return create_shipping_options(shipping_ids)
+
+@app.task
+def task_add_deliveries_to_cart(shipping_ids):
+    from box.tasks import add_deliveries_to_cart
+    return add_deliveries_to_cart(shipping_ids)
+
+
+@app.task
+def task_remove_label_from_cart(shipping_id):
+    from box.models import Shipping
+    try:
+        shipping = Shipping.objects.get(id=shipping_id)
+        if shipping.delete_label():
+            return f'Etiqueta de {shipping_id} removida'
+        return f'Não foi possível remover a etiqueta de {shipping_id}'
+    except Shipping.DoesNotExist:
+        return 'Envio não encontrado'
+
+@app.task
+def task_cart_checkout(label_ids):
+    from melhor_envio.service import MelhorEnvioService
+    return MelhorEnvioService.cart_checkout(label_ids)
+
+
+@app.task
+def task_print_labels(purchase_id):
+    from melhor_envio.service import MelhorEnvioService
+    return MelhorEnvioService.print_labels(purchase_id)

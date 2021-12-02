@@ -13,6 +13,11 @@ Plataforma de administração do clubinho Preto, desenvolvido em Django
     $ python manage.py migrate
     
 
+#### Populate default instances: 
+
+    $ python manage.py populate
+
+
 #### You can now run the development server:
 
     $ python manage.py runserver

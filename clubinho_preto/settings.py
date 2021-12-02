@@ -25,9 +25,18 @@ env.read_env()
 SECRET_KEY = os.environ.get('SECRET_KEY')
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 DEBUG = int(os.environ.get('DEBUG', default=0))
-ASAAS_KEY = os.environ.get('ASAAS_Key', default=None)
+
+ASAAS_KEY = os.environ.get('ASAAS_Key', default='ASAAS_KEY')
 ASAAS_URL = os.environ.get('ASAAS_URL', default='https://www.asaas.com/api/v3/')
-BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', default=None))
+BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', default='49.9'))
+
+MELHORENVIO_URL = os.environ.get('MELHORENVIO_URL', default='https://www.melhorenvio.com.br/')
+MELHORENVIO_CLIENT_ID = os.environ.get('MELHORENVIO_CLIENT_ID', default='MELHORENVIO_CLIENT_ID')
+MELHORENVIO_SECRET = os.environ.get('MELHORENVIO_SECRET', default='MELHORENVIO_SECRET')
+MELHORENVIO_SHIPPING_FROM = os.environ.get('MELHORENVIO_SHIPPING_FROM', default='MELHORENVIO_SHIPPING_FROM')
+
+BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL', default='BACKEND_BASE_URL')
+MELHORENVIO_REDIRECT_URL = f"{BACKEND_BASE_URL}get_token"
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
@@ -44,9 +53,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'debug_toolbar',
     'django_celery_beat',
+    
     'account',
-    'finance',
     'box',
+    'checkout',
+    'finance',
+    'melhor_envio',
 ]
 
 MIDDLEWARE = [
@@ -90,6 +102,17 @@ DATABASES = {
     'default': env.db()
 }
 
+CACHE_TIME = 10 * 60
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("REDIS_URL"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+        },
+        "KEY_PREFIX": "clubinhopreto"
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -126,10 +149,10 @@ USE_TZ = True
 def show_toolbar(request):
     return True
 
-
-DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': show_toolbar,
-}
+if DEBUG:
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': show_toolbar,
+    }
 
 
 # Static files (CSS, JavaScript, Images)

@@ -18,12 +18,12 @@ class AccountService:
 
         # separate asaas data from our data
         subscriber_keys = ['relatedness', 'more_info', 'relatedness', 'relatedness_raw', 'kids_name',
-                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 'subscribing_date', ]
+                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 'subscribing_date', 'delivery']
 
         subscriber_data = {key: customer_data[key] for key in customer_data if key in subscriber_keys}
 
-        for key, value in subscriber_data.items():
-            customer_data.pop(key)
+        # for key, value in subscriber_data.items():
+        #     customer_data.pop(key)
 
         url = f"{ASAAS_URL}/customers"
         response = requests.post(url, json=customer_data, headers={'access_token': ASAAS_KEY})
@@ -31,18 +31,19 @@ class AccountService:
         if response.ok:
             data = response.json()
 
+            keys = ['name', 'email', 'phone', 'address', 'addressNumber', 'province', 'complement']
             try:
                 subscriber = Subscriber.objects.create(
+                    # different keys from asaas
                     asaas_customer_id=data.get('id', None),
                     cep=data.get('postalCode', None),
-
-                    name=data.get('name', None),
-                    email=data.get('email', None),
                     cpf=data.get('cpfCnpj', None),
-                    phone=data.get('phone', None),
-                    address=data.get('address', None),
 
-                    **subscriber_data
+                    # same as asaas form
+                    **{key: customer_data.get(key, None) for key in keys},
+
+                    # django only
+                    ** subscriber_data
                 )
             except Exception as e:
                 print(f'______COULD NOT CREATE SUBSCRIBER: {e}')
@@ -65,29 +66,26 @@ class AccountService:
 
             # skip existing customers
             if asaas_customer.get('id') in existing_customers_ids:
-                skipped +=1
+                skipped += 1
                 continue
 
-            # concat all address fields
-            address_fields = 'address', 'addressNumber', 'complement', 'province'
-            field_values = [asaas_customer.get(field, None) for field in address_fields]
-            filtered_field_values = list(filter(lambda x: x is not None, field_values))
-            address = ', '.join(filtered_field_values)
-
-            ## disabled for lack of 'more_details' or 'description' field
-            # concat other fields 
+            # disabled for lack of 'more_details' or 'description' field
+            # concat other fields
             # more_info_fields = 'cpfCnpj', 'additionalEmails'
             # field_values = [f"{field}: {asaas_customer.get(field, '')}" for field in more_info_fields]
             # more_info = '\n'.join(field_values)
 
             email = asaas_customer.get('email', None) or f"{uuid4().int}@sem_email.com"
+            keys = ['phone', 'address', 'addressNumber', 'complement', 'province']
+
             data = {
                 'asaas_customer_id': asaas_customer.get('id'),
                 'name': asaas_customer.get('name'),
                 'email': email,
-                'phone': asaas_customer.get('phone'),
-                'address': address,
                 'cep': asaas_customer.get('postalCode'),
+                'cpf': asaas_customer.get('cpfCnpj'),
+
+                **{key: asaas_customer.get(key, None) for key in keys},
                 # 'more_info': more_info,
             }
             try:
