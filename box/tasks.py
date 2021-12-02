@@ -6,16 +6,19 @@ def create_shipping_options(shipping_ids):
     Also saves the cheapest shipping option as the selected one
     """
 
-    from clubinho_preto.settings import MELHORENVIO_SHIPPING_FROM
     from melhor_envio.service import MelhorEnvioService
 
+    from account.models import Sender
     from box.models import Shipping, ShippingOption
-
+    shipping_from = None
+    sender = Sender.objects.first()
+    if sender:
+        shipping_from = sender.postal_code
     shippings = Shipping.objects.filter(id__in=shipping_ids).exclude(recipient__cep__isnull=True)
     for shipping in shippings:
 
         shipping_options = MelhorEnvioService.get_shipping_options(
-            postal_from=MELHORENVIO_SHIPPING_FROM,
+            postal_from=shipping_from,
             postal_to=shipping.recipient.cep,
 
             height=shipping.box.height,
@@ -37,18 +40,16 @@ def create_shipping_options(shipping_ids):
 
                 data = {field: shipping_info.get(field, None) for field in fields}
 
-                shipping_option = ShippingOption(
-                    **data,
-                    melhor_envio_id=shipping_info.get("id", None),
-                    company_name=shipping_info.get("company", {}).get("name", None),
-                    delivery_time_min=shipping_info.get("delivery_range", {}).get("min", None),
-                    delivery_time_max=shipping_info.get("delivery_range", {}).get("max", None),
-                )
-                create_list.append(shipping_option)
-
                 try:
-                    shipping_option.save()
-                    # ShippingOption.objects.bulk_create(create_list)
+                    shipping_option = ShippingOption.objects.create(
+                        **data,
+                        melhor_envio_id=shipping_info.get("id", None),
+                        company_name=shipping_info.get("company", {}).get("name", None),
+                        delivery_time_min=shipping_info.get("delivery_range", {}).get("min", None),
+                        delivery_time_max=shipping_info.get("delivery_range", {}).get("max", None),
+                    )
+                    create_list.append(shipping_option)
+                    
                 except Exception as e:
                     raise e  # todo
 
@@ -86,9 +87,8 @@ def add_deliveries_to_cart(shipping_ids):
         recipient__isnull=False
     )
     if shippings and sender:
-        success = MelhorEnvioService.add_items_to_cart(shippings, sender)
-        if success:
-            return True 
+        return MelhorEnvioService.add_items_to_cart(shippings, sender)
+        
             
     elif not sender:
         return "Missing Sender"
