@@ -1,7 +1,6 @@
 import os
 from celery.schedules import crontab
 from celery import Celery
-from account.tasks import account_task
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubinho_preto.settings')
@@ -74,4 +73,13 @@ def task_remove_label_from_cart(shipping_id):
     except Shipping.DoesNotExist:
         return 'Envio não encontrado'
 
-    
+@app.task
+def task_cart_checkout(label_ids):
+    from melhor_envio.service import MelhorEnvioService
+    return MelhorEnvioService.cart_checkout(label_ids)
+
+
+@app.task
+def task_print_labels(purchase_id):
+    from melhor_envio.service import MelhorEnvioService
+    return MelhorEnvioService.print_labels(purchase_id)

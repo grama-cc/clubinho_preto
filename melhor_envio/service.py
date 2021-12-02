@@ -1,4 +1,5 @@
 import json
+from re import purge
 
 import requests
 from checkout.models import Label, Purchase
@@ -268,12 +269,14 @@ class MelhorEnvioService():
                 return Label.objects.filter(id__in=label_ids).update(purchase=purchase, status='released')
                 
             except Exception as e:
-                raise e
                 return False
         return False    
 
     @staticmethod
-    def print_labels(label_ids):
+    def print_labels(purchase_id):
+
+        purchase = Purchase.objects.get(id=purchase_id)
+        label_ids = list(purchase.label_set.values_list('id', flat=True))
 
         data = {
             'orders': [str(label_id) for label_id in label_ids]
@@ -287,7 +290,6 @@ class MelhorEnvioService():
             try:
                 response.json() # may return a html page
             except:
-                print("could not generate")
                 return False
 
         data['mode'] = 'public'
@@ -299,7 +301,9 @@ class MelhorEnvioService():
         )
         if response.ok:
             try:
-                return response.json()
+                data = response.json()
+                purchase.print_url = data.get('url')
+                purchase.save()
+                return True
             except:
-                print("could not print")
                 return False
