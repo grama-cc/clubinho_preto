@@ -9,11 +9,22 @@ MELHORENVIO_CACHE_TIME = 2592000
 
 
 def save_token_to_cache(data):
-    cache.set("access_token", data.get("access_token"), MELHORENVIO_CACHE_TIME) # valid for 30 days
-    cache.set("refresh_token", data.get("refresh_token"), int(MELHORENVIO_CACHE_TIME*1.5)) # valid for 45 days
+    cache.set("access_token", data.get("access_token"), MELHORENVIO_CACHE_TIME)  # valid for 30 days
+    cache.set("refresh_token", data.get("refresh_token"), int(MELHORENVIO_CACHE_TIME*1.5))  # valid for 45 days
 
 
 class MelhorEnvioService():
+
+    @staticmethod
+    def melhor_envio_request(url, method='GET', data={}):
+        bearer_token = MelhorEnvioService.get_token()
+        headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+
+        return getattr(requests, method)(
+            url=f"{MELHORENVIO_URL}{url}",
+            headers=headers,
+            data=json.dumps(data)
+        )
 
     @staticmethod
     def set_access_token(code):
@@ -66,7 +77,7 @@ class MelhorEnvioService():
                 if response.ok:
                     token = response.json().get("access_token")
                     return token
-            else:     
+            else:
                 # todo: if not refresh_token: reauthenticate via 'AuthorizeApplicationView' api
                 pass
 
@@ -123,11 +134,13 @@ class MelhorEnvioService():
         Add delivery options to MelhorEnvio cart.
         After this, comes the checkout step
         """
+        success = 0
+        failure = 0
         for shipping in shippings:
-        
+
             recipient = shipping.recipient
             same_name_subscriber_fields = 'name', 'email', 'phone', 'address', 'complement',
-            
+
             # TODO: NFE
             nfe = "31190307586261000184550010000092481404848162"
 
@@ -139,7 +152,7 @@ class MelhorEnvioService():
                 # para integrações que utilizem o token gerado no painel do Melhor Envio,
                 # não se fazendo necessário para outras transportadoras ou integrações
                 # que utilizem os tokens gerados através de OAuth2.
-                # "agency": 49, 
+                # "agency": 49,
 
 
                 "from": sender,
@@ -151,13 +164,13 @@ class MelhorEnvioService():
                     "district": recipient.province,
                     "postal_code": recipient.cep,
                     # "company_document": "89794131000101", # PJ only
-                    # "state_register": "123456", # PJ only 
+                    # "state_register": "123456", # PJ only
                     "city": recipient.city,
                     "state_abbr": recipient.state_initials,
                     "country_id": "BR",
                     "note": recipient.note or '',
                 },
-                "volumes": [ # Correios only accepts one volume per request
+                "volumes": [  # Correios only accepts one volume per request
                     {
                         "height": shipping.box.height,
                         "width": shipping.box.width,
@@ -172,7 +185,7 @@ class MelhorEnvioService():
                     "reverse": False,
                     "non_commercial": False,
 
-                    # todo: NF
+
                     # Nota: para transportadoras privadas (todas menos Correios),
                     # o campo options.invoice.key é obrigatório e deve conter a chave da NF.
                     # Isto pode ser contornado configurando o envio para que o mesmo seja
@@ -191,11 +204,10 @@ class MelhorEnvioService():
                     # ]
                 }
             }
-            
 
             bearer_token = MelhorEnvioService.get_token()
             headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-            
+            # print(data)
             response = requests.post(
                 url=f"{MELHORENVIO_URL}api/v2/me/cart/",
                 headers=headers,
@@ -207,20 +219,39 @@ class MelhorEnvioService():
                     label = response.json()
                     shipping.label = label
                     shipping.save()
-                    
+                    success += 1
+
                 except:
-                    # Returns html if there is error
-                    print(f"1-Não conseguiu adicionar itens no carrinho {response.status_code}")    
+                    failure += 1
+                    print(f"1-Não conseguiu adicionar itens no carrinho {response.status_code}")
             else:
                 print(f"2-Não conseguiu adicionar itens no carrinho {response.status_code}")
 
+        return f"{success} itens adicionados ao carrinho com sucesso e {failure} itens não adicionados"
+
     @staticmethod
     def remove_label_from_cart(label_id):
-        bearer_token = MelhorEnvioService.get_token()
-        headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
-
-        return requests.delete(
-            url=f"{MELHORENVIO_URL}api/v2/me/cart/{label_id}",
-            headers=headers,
+        return MelhorEnvioService.melhor_envio_request(
+            url=f"api/v2/me/cart/{label_id}",
+            method='delete'
         )
-        
+
+    @staticmethod
+    def cart_checkout(label_ids):
+        payload = {
+            "orders": [str(label_id) for label_id in label_ids]
+        }
+        response = MelhorEnvioService.melhor_envio_request(
+            url=f"api/v2/me/shipment/checkout",
+            method='post',
+            data=payload
+        )
+        if response.ok:
+            try:
+                checkout_data = response.json()
+                orders = checkout_data.get('purchase', {}).get('orders', [])
+                label_ids = [order.get('id') for order in orders]
+                # todo: these are eligible for shipping label generation
+                return response
+            except:
+                return False

@@ -53,9 +53,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'debug_toolbar',
     'django_celery_beat',
+    
     'account',
-    'finance',
     'box',
+    'finance',
+    'melhor_envio',
 ]
 
 MIDDLEWARE = [
