@@ -1,11 +1,12 @@
+from account.models import Sender, Subscriber
+from celery_app.celery import task_cart_checkout, task_create_shipping_options
 from django.contrib import admin
 from django.core.checks import messages
+from django.db.models import F
+from django.utils import timezone
 
 # Register your models here.
 from .models import Box, BoxItem, Shipping, ShippingOption
-from account.models import Subscriber, Sender
-from django.utils import timezone
-from celery_app.celery import task_create_shipping_options, task_cart_checkout
 
 
 class BoxItemAdmin(admin.ModelAdmin):
@@ -21,7 +22,6 @@ class BoxAdmin(admin.ModelAdmin):
     def create_this_month_shippings(self, request, queryset):
         shippings = []
 
-
         # All subscribers that don't have shippings for this month
         subscribers = Subscriber.objects.all()\
             .select_related('subscription')\
@@ -31,7 +31,7 @@ class BoxAdmin(admin.ModelAdmin):
         # todo: make this async task
         for box in queryset:
             for subscriber in subscribers:
-                if subscriber.can_send_package(): # Remove subscribers that don't have full address info
+                if subscriber.can_send_package():  # Remove subscribers that don't have full address info
                     shippings.append(
                         Shipping(
                             box=box,
@@ -55,11 +55,27 @@ class ShippingItemAdmin(admin.ModelAdmin):
 
 
 class ShippingAdmin(admin.ModelAdmin):
-    list_display = "id", "box", "recipient", "date_created", "shipping_option_selected", "user_ok", "has_label",
-    list_filter = "recipient", "box", # todo: filter by has label
+    list_display = "id", "box", "recipient", "city", "province", "date_created", "shipping_option_selected", "user_ok", "has_label",
+    list_filter = "recipient", "box",  # todo: filter by has label
     # filter_horizontal = "shipping_options",
     readonly_fields = "date_created", "label"
     actions = 'generate_shipping_options', 'generate_labels', 'clear_labels', 'checkout'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request)\
+            .select_related('box', 'recipient')\
+            .annotate(
+                city=F('recipient__city'),
+                province=F('recipient__province'),
+        )
+
+    def city(self, obj):
+        return obj.city
+    city.short_description = "Cidade"
+
+    def province(self, obj):
+        return obj.province
+    province.short_description = "Bairro"
 
     def user_ok(self, obj):
         if obj.recipient:
@@ -75,9 +91,10 @@ class ShippingAdmin(admin.ModelAdmin):
 
     def generate_shipping_options(self, request, queryset):
         from celery_app.celery import task_create_shipping_options
-        
+
         if not Sender.objects.count():
-            self.message_user(request, "É preciso criar um Remetente primeiro. veja como no README do projeto", level=messages.WARNING)
+            self.message_user(
+                request, "É preciso criar um Remetente primeiro. veja como no README do projeto", level=messages.WARNING)
             return
 
         ids = list(queryset.values_list('id', flat=True))
@@ -98,10 +115,11 @@ class ShippingAdmin(admin.ModelAdmin):
 
     def checkout(self, request, queryset):
         ids = list(queryset.values_list('label', flat=True))
-        ids = list(filter(lambda _id: bool(_id), ids)) # remove null if exists
+        ids = list(filter(lambda _id: bool(_id), ids))  # remove null if exists
         task_cart_checkout.delay(ids)
         self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas")
     checkout.short_description = 'Comprar etiquetas'
+
 
 admin.site.register(Box, BoxAdmin)
 admin.site.register(BoxItem, BoxItemAdmin)

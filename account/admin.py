@@ -23,7 +23,7 @@ class ShippingInline(admin.StackedInline):
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'cep', '_can_send_package', 'subscription_status',
+    list_display = ('id', 'name', 'email', 'city', 'province', '_can_send_package', 'subscription_status',
                     'shipping_count', 'relatedness', 'kids_race', 'asaas_customer_id')
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
