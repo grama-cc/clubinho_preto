@@ -19,6 +19,7 @@ class SubscriberAdmin(admin.ModelAdmin):
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
     # todo: filter by "can_send_package"
+    # todo: Shipping Inline
 
     def _can_send_package(self, obj):
         return obj.can_send_package()

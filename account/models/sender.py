@@ -25,3 +25,4 @@ class Sender(models.Model):
 
     class Meta:
         verbose_name = "Remetente"
+        verbose_name_plural = "Remetente"
