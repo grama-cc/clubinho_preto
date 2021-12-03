@@ -18,10 +18,10 @@ class Box(models.Model):
     name = models.CharField(max_length=255, verbose_name="Nome")
     description = models.TextField(blank=True, null=True, verbose_name="Descrição")
 
-    width = models.FloatField(null=True, verbose_name="Largura (cm)")
-    height = models.FloatField(null=True, verbose_name="Altura (cm)")
-    length = models.FloatField(null=True, verbose_name="Comprimento (cm)")
-    weight = models.FloatField(null=True, verbose_name="Peso (kg)")
+    width = models.FloatField(default=23.0, verbose_name="Largura (cm)")
+    height = models.FloatField(default=5.0, verbose_name="Altura (cm)")
+    length = models.FloatField(default=35.0, verbose_name="Comprimento (cm)")
+    weight = models.FloatField(default=1.0, verbose_name="Peso (kg)")
 
     items = models.ManyToManyField("BoxItem", blank=True, verbose_name="Itens")
     # todo carta de orientacao
