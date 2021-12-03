@@ -3,7 +3,7 @@ from django.core.checks import messages
 
 # Register your models here.
 from .models import Box, BoxItem, Shipping, ShippingOption
-from account.models import Subscriber
+from account.models import Subscriber, Sender
 from django.utils import timezone
 from celery_app.celery import task_create_shipping_options, task_cart_checkout
 
@@ -21,7 +21,7 @@ class BoxAdmin(admin.ModelAdmin):
     def create_this_month_shippings(self, request, queryset):
         shippings = []
 
-        # todo: update this rule
+
         # All subscribers that don't have shippings for this month
         subscribers = Subscriber.objects.all()\
             .exclude(shippings__date_created__month=timezone.now().month).distinct()
@@ -29,12 +29,13 @@ class BoxAdmin(admin.ModelAdmin):
         # todo: make this async task
         for box in queryset:
             for subscriber in subscribers:
-                shippings.append(
-                    Shipping(
-                        box=box,
-                        recipient=subscriber
+                if subscriber.can_send_package(): # Remove subscribers that don't have full address info
+                    shippings.append(
+                        Shipping(
+                            box=box,
+                            recipient=subscriber
+                        )
                     )
-                )
 
         try:
             Shipping.objects.bulk_create(shippings)
@@ -72,6 +73,11 @@ class ShippingAdmin(admin.ModelAdmin):
 
     def generate_shipping_options(self, request, queryset):
         from celery_app.celery import task_create_shipping_options
+        
+        if not Sender.objects.count():
+            self.message_user(request, "É preciso criar um Remetente primeiro. veja como no README do projeto", level=messages.WARNING)
+            return
+
         ids = list(queryset.values_list('id', flat=True))
         task_create_shipping_options.delay(ids)
     generate_shipping_options.short_description = "Gerar opções de envio"
