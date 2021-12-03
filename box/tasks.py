@@ -33,25 +33,30 @@ def create_shipping_options(shipping_ids):
 
         if shipping_options:
             create_list = []
-            fields = "name", "price", "delivery_time", "id"
+            fields = "name", "price", "delivery_time"
             for shipping_info in shipping_options:
 
-                # TODO: Ignore "Azul Cargo" company as it does not generate labels via API
+                # Ignore "Azul Cargo" company as it does not generate labels via API
+                if 'azul cargo' in shipping_info.get('name', '').lower():
+                    pass
 
+                # Get data with same key
                 data = {field: shipping_info.get(field, None) for field in fields}
-
-                try:
-                    shipping_option = ShippingOption.objects.create(
-                        **data,
-                        melhor_envio_id=shipping_info.get("id", None),
-                        company_name=shipping_info.get("company", {}).get("name", None),
-                        delivery_time_min=shipping_info.get("delivery_range", {}).get("min", None),
-                        delivery_time_max=shipping_info.get("delivery_range", {}).get("max", None),
-                    )
-                    create_list.append(shipping_option)
+                shipping_option = ShippingOption(
+                    **data,
+                    melhor_envio_id=shipping_info.get("id", None),
+                    company_name=shipping_info.get("company", {}).get("name", None),
+                    delivery_time_min=shipping_info.get("delivery_range", {}).get("min", None),
+                    delivery_time_max=shipping_info.get("delivery_range", {}).get("max", None),
+                )
+                create_list.append(shipping_option)
                     
-                except Exception as e:
-                    raise e  # todo
+                
+            try:
+                ShippingOption.objects.bulk_create(create_list)
+            except Exception as e:
+                print(f"ERROR - {e}")
+                pass
 
             # Save options to shipping
             ids = [item.id for item in create_list]
@@ -63,8 +68,7 @@ def create_shipping_options(shipping_ids):
 
             shipping.save()
         else:
-            # todo
-            pass
+            print(f"Não foram encontradas opções de entrega para o Envio #{shipping.id}.")
 
 
 def add_deliveries_to_cart(shipping_ids):
