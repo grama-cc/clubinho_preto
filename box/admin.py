@@ -24,6 +24,8 @@ class BoxAdmin(admin.ModelAdmin):
 
         # All subscribers that don't have shippings for this month
         subscribers = Subscriber.objects.all()\
+            .select_related('subscription')\
+            .filter(subscription__status='ACTIVE')\
             .exclude(shippings__date_created__month=timezone.now().month).distinct()
 
         # todo: make this async task

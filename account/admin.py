@@ -1,17 +1,51 @@
+from box.models.shipping import Shipping
 from django.contrib import admin
 from django.contrib.admin import register
+from django.db.models import Count, F
 
+from finance.models import Subscription
 from .models import Sender, Subscriber
+
+
+class SubscriptionInline(admin.StackedInline):
+    model = Subscription
+    fields = 'date', 'value', 'asaas_id', 'billingType', 'cycle', 'description', 'status', 'deleted',
+    readonly_fields = 'date', 'value', 'asaas_id', 'billingType', 'cycle', 'description', 'status', 'deleted',
+
+
+class ShippingInline(admin.StackedInline):
+    model = Shipping
+    extra = 0
+    fields = 'date_created', 'box', 'shipping_option_selected',
+    readonly_fields = 'date_created', 'box', 'shipping_option_selected'
 
 
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'cep', '_can_send_package', 'relatedness', 'kids_race', 'asaas_customer_id')
+    list_display = ('id', 'name', 'email', 'cep', '_can_send_package', 'subscription_status',
+                    'shipping_count', 'relatedness', 'kids_race', 'asaas_customer_id')
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
+    inlines = SubscriptionInline, ShippingInline,
     # todo: filter by "can_send_package"
-    # todo: Shipping Inline
+    # self.fields['']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request)\
+            .select_related('subscription')\
+            .annotate(
+                shipping_count=Count('shippings'),
+                subscription_status=F('subscription__status'),
+        )
+
+    def subscription_status(self, obj):
+        return obj.subscription_status
+    subscription_status.short_description = 'Status'
+
+    def shipping_count(self, obj):
+        return obj.shipping_count
+    shipping_count.short_description = 'Envios'
 
     def _can_send_package(self, obj):
         return obj.can_send_package()

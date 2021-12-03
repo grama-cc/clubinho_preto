@@ -19,16 +19,14 @@ def setup_periodic_tasks(sender, **kwargs):
     )
 
     sender.add_periodic_task(
-        crontab(minute=15, hour='*/12'),
+        crontab(minute=30, hour='*/1'),
         task_import_subscriptions.s(),
     )
 
     sender.add_periodic_task(
-        crontab(minute=30, hour='*/12'),
+        crontab(minute=15, hour='*/1'),
         task_update_subscriptions.s(),
     )
-
-    # todo: update customers
 
 
 @app.task

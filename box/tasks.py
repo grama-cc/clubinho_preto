@@ -98,16 +98,3 @@ def add_deliveries_to_cart(shipping_ids):
         return "Missing Sender"
     elif not shippings:
         return "Missing Shippings"
-
-
-def checkout_cart():
-    """
-    Checkout MelhorEnvio cart.
-    After this comes the label generation step
-    """
-
-    pass
-
-
-def generate_labels(labels_ids):
-    pass
