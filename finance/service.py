@@ -101,6 +101,8 @@ class FinanceService:
     @staticmethod
     def update_asaas_subscriptions(ids=None):
         asaas_subscriptions = FinanceService.get_asaas_subscriptions()
+        subscribers = Subscriber.objects.all().values_list('id', 'asaas_customer_id')
+        subscribers_dict = {s[1]:s[0] for s in subscribers}
 
         updated = errors = 0
 
@@ -115,10 +117,16 @@ class FinanceService:
                 'status': asaas_subscription.get('status'),
                 'deleted': asaas_subscription.get('deleted'),
             }
+
+            customer_id = asaas_subscription.get('customer')
+            subscriber = subscribers_dict.get(customer_id)
+            if subscriber:
+                data['subscriber'] = subscriber
+
             try:
                 subscriptions.update(**data)
                 updated += len(subscriptions)
-            except:
+            except Exception as e:
                 errors += len(subscriptions) if subscriptions else 1
 
         return [updated, errors]
