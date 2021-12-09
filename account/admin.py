@@ -1,9 +1,10 @@
-from box.models.shipping import Shipping
+from box.models import Shipping
 from django.contrib import admin
 from django.contrib.admin import register
 from django.db.models import Count, F
-
+from django.utils.html import mark_safe  # Newer versions
 from finance.models import Subscription
+
 from .models import Sender, Subscriber, Warning
 
 
@@ -69,8 +70,8 @@ class SubscriberAdmin(admin.ModelAdmin):
 
 @register(Sender)
 class SenderAdmin(admin.ModelAdmin):
-    list_display = "name", "phone", "email", "address",
-
+    list_display = "name", "phone", "email", "address", "jadlog_agency_id",
+    readonly_fields = "jadlog_agency_options", "agency_options"
     fieldsets = (
         ("Informações Gerais",
          {"fields": ("name", "phone", "email", )}),
@@ -83,6 +84,9 @@ class SenderAdmin(admin.ModelAdmin):
 
         (None,
          {"fields": ("note",)}),
+
+        ("JadLog",
+         {"fields": ("jadlog_agency_id", "agency_options",)}),
     )
 
     def has_add_permission(self, request, obj=None):
@@ -91,14 +95,25 @@ class SenderAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def agency_options(self, obj):
+        try:
+            response = ''
+            if obj.jadlog_agency_options:
+                for agency in obj.jadlog_agency_options:
+                    for field in agency.keys():
+                        response+=f'{field}: {agency[field]}<br>'
+                    response+='<br>'
+
+            return mark_safe(response)
+        except Exception as e:
+            return obj.jadlog_agency_options
+
 
 @register(Warning)
 class WarningAdmin(admin.ModelAdmin):
-    list_display = "id", "created_at", "text", "solution", #"description", "data",
-    ordering = "-created_at", 
+    list_display = "id", "created_at", "text", "solution",  # "description", "data",
+    ordering = "-created_at",
     readonly_fields = list_display
 
     def has_add_permission(self, request, obj=None):
         return False
-    
-    

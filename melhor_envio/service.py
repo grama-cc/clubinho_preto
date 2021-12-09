@@ -1,10 +1,11 @@
 import json
-from re import purge
 
 import requests
-from account.models import Warning
+from requests.api import get
+from account.models import Sender, Warning
 from checkout.models import Label, Purchase
-from clubinho_preto.settings import (BACKEND_BASE_URL, MELHORENVIO_CLIENT_ID,
+from clubinho_preto.settings import (BACKEND_BASE_URL, JADLOG_ID,
+                                     MELHORENVIO_CLIENT_ID,
                                      MELHORENVIO_REDIRECT_URL,
                                      MELHORENVIO_SECRET, MELHORENVIO_URL)
 from django.core.cache import cache
@@ -81,7 +82,7 @@ class MelhorEnvioService():
                 if response.ok:
                     token = response.json().get("access_token")
                     return token
-            
+
             Warning.objects.create(
                 text="Autenticação do melhor envio vencida, por favor reautenticar.",
                 description=f"Acessar a url {BACKEND_BASE_URL}/authorize_application, ver modelo de resposta abaixo",
@@ -359,3 +360,38 @@ class MelhorEnvioService():
                     data=data
                 )
                 return False
+
+    @staticmethod
+    def get_jadlog_agencies():
+        sender = Sender.objects.first()
+        if not sender:
+            Warning.objects.create(
+                text="Nenhum remetente cadastrado",
+                solution=f"Favor referir a documentação para mais informações",
+            )
+            return False
+
+        response = requests.get(f"{MELHORENVIO_URL}/api/v2/me/shipment/agencies/?company={JADLOG_ID}")
+        if response.ok:
+            try:
+                data = response.json()
+                fields = 'id', 'name', 'status',
+                agencies = []
+                for agency in data:
+                    agencies.append({
+                        'address': agency.get('address',{}).get('address'),
+                        'district': agency.get('address',{}).get('district'),
+                        'city': agency.get('address',{}).get('city',{}).get('city'),
+                        
+                        **{f: agency.get(f) for f in fields},
+                    })
+                sender.jadlog_agency_options = agencies
+                sender.save()
+                return True
+            except Exception as e:
+                pass
+        Warning.objects.create(
+            text="Não foi possível obter as agências do JadLog",
+            description=f"status da resposta:{response.status_code}, resposta:{response.content}",
+            solution=f"Verificar se o JadLog está ativo e se o código da agência é {JADLOG_ID}",
+        )

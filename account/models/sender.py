@@ -20,6 +20,9 @@ class Sender(models.Model):
     postal_code = models.CharField(max_length=255, verbose_name="CEP")
     note = models.CharField(max_length=255, verbose_name="Observação")
 
+    jadlog_agency_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="Agência Jadlog")
+    jadlog_agency_options = models.JSONField(default=dict, verbose_name="Opções Agências Jadlog")
+
     def __str__(self):
         return self.name
 

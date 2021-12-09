@@ -19,13 +19,18 @@ def setup_periodic_tasks(sender, **kwargs):
     )
 
     sender.add_periodic_task(
+        crontab(minute=15, hour='*/1'),
+        task_update_subscriptions.s(),
+    )
+
+    sender.add_periodic_task(
         crontab(minute=30, hour='*/1'),
         task_import_subscriptions.s(),
     )
 
     sender.add_periodic_task(
-        crontab(minute=15, hour='*/1'),
-        task_update_subscriptions.s(),
+        crontab(minute=5, hour=0),
+        task_get_jadlog_agencies.s(),
     )
 
 
@@ -78,3 +83,9 @@ def task_cart_checkout(label_ids):
 def task_print_labels(purchase_id):
     from melhor_envio.service import MelhorEnvioService
     return MelhorEnvioService.print_labels(purchase_id)
+
+
+@app.task
+def task_get_jadlog_agencies():
+    from melhor_envio.service import MelhorEnvioService
+    return MelhorEnvioService.get_jadlog_agencies()
