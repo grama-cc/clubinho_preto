@@ -20,7 +20,10 @@ class SubscribeView(View):
         # Handle required delivery field
         delivery_choice = request.POST.get('delivery', None)
         if not delivery_choice or DELIVERY_CHOICES.get(delivery_choice) is None:
-            return render(request, 'subscription.html', {'error_message': 'É preciso escolher uma opção de frete válida'})
+            return render(request, 'subscription.html', {
+                'error_message': 'É preciso escolher uma opção de frete válida',
+                'delivery_options': DELIVERY_CHOICES.items()
+                })
         delivery_choice = DELIVERY_CHOICES.get(delivery_choice)
 
         # print(f'delivery ok {delivery_choice}')
@@ -42,7 +45,10 @@ class SubscribeView(View):
 
             else:
                 # Return to form with error message
-                return render(request, 'subscription.html', {'error_message': "Ocorreu um erro ao criar a assinatura. Por favor entre em contato ou tente novamente mais tarde"})
+                return render(request, 'subscription.html', {
+                    'error_message': 'Ocorreu um erro ao criar a assinatura. Por favor entre em contato ou tente novamente mais tarde',
+                    'delivery_options': DELIVERY_CHOICES.items()
+                    })
         else:
             # todo: send mail? or create Form error model
             message = json.loads(
@@ -50,4 +56,7 @@ class SubscribeView(View):
             if message and hasattr(message, 'errors'):
                 errors = [error.get('description') for error in message.get('errors')]
                 message = '\n'.join(errors)
-            return render(request, 'subscription.html', {'error_message': str(message)})
+            return render(request, 'subscription.html', {
+                'error_message': str(message),
+                'delivery_options': DELIVERY_CHOICES.items()
+            })

@@ -1,6 +1,6 @@
 import requests
 from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
-
+from account.models import Warning
 from .models import Subscriber
 
 
@@ -13,26 +13,34 @@ class AccountService:
     def list_asaas_customer_id():
         return Subscriber.objects.filter(asaas_customer_id__isnull=False).values_list('asaas_customer_id', flat=True)
 
+
     @staticmethod
-    def create_asaas_customer(customer_data):
+    def create_asaas_customer(_customer_data):
+        
+        # Bypass "This querydict instance is immutable"
+        # And get first item from each item on request.POST
+        customer_data = {key:_customer_data.get(key,[None][0]) for key in _customer_data.keys()} 
 
-        # separate asaas data from our data
+        # separate asaas data from application data
         subscriber_keys = ['relatedness', 'more_info', 'relatedness', 'relatedness_raw', 'kids_name',
-                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 'subscribing_date', 'delivery', 
-                           'city', 'state_initials']
-
+                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 
+                           'subscribing_date', 'delivery', 'city', 'state_initials']
         subscriber_data = {key: customer_data[key] for key in customer_data if key in subscriber_keys}
 
-        # for key, value in subscriber_data.items():
-        #     customer_data.pop(key)
+        # Add complete subscriber info to Asaas customer
+        observations = ''
+        for key in subscriber_keys:
+            observations+= f"{key}:{customer_data.get(key)};"
+        customer_data['observations'] = observations
+
 
         url = f"{ASAAS_URL}/customers"
         response = requests.post(url, json=customer_data, headers={'access_token': ASAAS_KEY})
         subscriber = None
         if response.ok:
             data = response.json()
+            customer_keys = ['name', 'email', 'phone', 'address', 'addressNumber', 'province', 'complement']
 
-            keys = ['name', 'email', 'phone', 'address', 'addressNumber', 'province', 'complement']
             try:
                 _subscriber_data = {
                     # different keys from asaas
@@ -41,7 +49,7 @@ class AccountService:
                     'cpf':data.get('cpfCnpj', None),
 
                     # same as asaas form
-                    **{key: customer_data.get(key, None) for key in keys},
+                    **{key: customer_data.get(key, None) for key in customer_keys},
 
                     # django only
                     ** subscriber_data
