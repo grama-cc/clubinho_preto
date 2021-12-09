@@ -18,17 +18,8 @@ def create_shipping_options(shipping_ids):
     for shipping in shippings:
 
         shipping_options = MelhorEnvioService.get_shipping_options(
-            postal_from=shipping_from,
-            postal_to=shipping.recipient.cep,
-
-            height=shipping.box.height,
-            width=shipping.box.width,
-            length=shipping.box.length,
-            weight=shipping.box.weight,
-
-            insurance_value=shipping.box.insurance_value,
-            receipt=shipping.box.receipt,
-            own_hand=shipping.box.own_hand
+            shipping=shipping,
+            postal_from=shipping_from
         )
 
         if shipping_options:

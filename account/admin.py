@@ -4,7 +4,7 @@ from django.contrib.admin import register
 from django.db.models import Count, F
 
 from finance.models import Subscription
-from .models import Sender, Subscriber
+from .models import Sender, Subscriber, Warning
 
 
 class SubscriptionInline(admin.StackedInline):
@@ -90,3 +90,15 @@ class SenderAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@register(Warning)
+class WarningAdmin(admin.ModelAdmin):
+    list_display = "id", "created_at", "text", "solution", #"description", "data",
+    ordering = "-created_at", 
+    readonly_fields = list_display
+
+    def has_add_permission(self, request, obj=None):
+        return False
+    
+    

@@ -34,21 +34,26 @@ class AccountService:
 
             keys = ['name', 'email', 'phone', 'address', 'addressNumber', 'province', 'complement']
             try:
-                subscriber = Subscriber.objects.create(
+                _subscriber_data = {
                     # different keys from asaas
-                    asaas_customer_id=data.get('id', None),
-                    cep=data.get('postalCode', None),
-                    cpf=data.get('cpfCnpj', None),
+                    'asaas_customer_id':data.get('id', None),
+                    'cep':data.get('postalCode', None),
+                    'cpf':data.get('cpfCnpj', None),
 
                     # same as asaas form
                     **{key: customer_data.get(key, None) for key in keys},
 
                     # django only
                     ** subscriber_data
-                )
+                }
+                subscriber = Subscriber.objects.create(_subscriber_data)
             except Exception as e:
-                print(f'______COULD NOT CREATE SUBSCRIBER: {e}')
-                # todo: send email to Admin to create subscriber
+                Warning.objects.create(
+                    text="Não foi possível criar Assinante",
+                    description=str(e),
+                    data=_subscriber_data,
+                    solution="Tentar cadastrar manualmente pelo Admin de `Assinantes`"
+                )
 
         return response, subscriber
 

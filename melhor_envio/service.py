@@ -2,8 +2,9 @@ import json
 from re import purge
 
 import requests
+from account.models import Warning
 from checkout.models import Label, Purchase
-from clubinho_preto.settings import (MELHORENVIO_CLIENT_ID,
+from clubinho_preto.settings import (BACKEND_BASE_URL, MELHORENVIO_CLIENT_ID,
                                      MELHORENVIO_REDIRECT_URL,
                                      MELHORENVIO_SECRET, MELHORENVIO_URL)
 from django.core.cache import cache
@@ -80,35 +81,52 @@ class MelhorEnvioService():
                 if response.ok:
                     token = response.json().get("access_token")
                     return token
-            else:
-                # todo: if not refresh_token: reauthenticate via 'AuthorizeApplicationView' api
-                pass
+            
+            Warning.objects.create(
+                text="Autenticação do melhor envio vencida, por favor reautenticar.",
+                description=f"Acessar a url {BACKEND_BASE_URL}/authorize_application, ver modelo de resposta abaixo",
+                solution=f"É preciso acessar a url de autenticação. A resposta dela deve ser um código de acesso.",
+                data={
+                    "token_type": "Bearer",
+                    "expires_in": 2592000,
+                    "access_token": "blabla...",
+                    "refresh_token": "blabla..."
+                }
+            )
+            print("Criou aviso")
 
-            print("\t\tSEM TOKEN")
             return None
 
     @staticmethod
-    def get_shipping_options(postal_from, postal_to, height, width, length, weight, insurance_value, receipt, own_hand):
+    def get_shipping_options(shipping, postal_from):
         """
         Make a request to Melhor Envio API and get avaliable shipping options with passed params
         """
+
+        def create_warning(error):
+            Warning.objects.create(
+                text="Não foi possível criar opções de envio",
+                description=str(error),
+                solution=f"Revisar dados do envio #{shipping.id}",
+                data=data
+            )
         data = {
             "from": {
                 "postal_code": postal_from
             },
             "to": {
-                "postal_code": postal_to
+                "postal_code": shipping.recipient.cep
             },
             "package": {
-                "height": height,
-                "width": width,
-                "length": length,
-                "weight": weight
+                "height": shipping.box.height,
+                "width": shipping.box.width,
+                "length": shipping.box.length,
+                "weight": shipping.box.weight
             },
             "options": {
-                "insurance_value": insurance_value,
-                "receipt": receipt,
-                "own_hand": own_hand
+                "insurance_value": shipping.box.insurance_value,
+                "receipt": shipping.box.receipt,
+                "own_hand": shipping.box.own_hand
             }
         }
         response = MelhorEnvioService.melhor_envio_request(
@@ -120,13 +138,13 @@ class MelhorEnvioService():
         if response.ok:
             try:
                 return response.json()
-            except:
+            except Exception as e:
                 # Returns html if there is error
-                print(f"Não conseguiu gerar opções de frete {response.status_code}")
+                create_warning("Retornou uma página HTML ao invés de uma resposta de API.", data)
                 return False
 
         else:
-            print(f"Não conseguiu gerar opções de frete {response.status_code}")
+            create_warning(f"status da resposta:{response.status_code}, resposta:{response.content}", data)
             return False
 
     @staticmethod
@@ -135,6 +153,15 @@ class MelhorEnvioService():
         Add delivery options to MelhorEnvio cart.
         After this, comes the checkout step
         """
+
+        def create_warning(shipping_id, error, data):
+            Warning.objects.create(
+                text="Não foi possível adicionar itens no carrinho",
+                description=str(error),
+                solution=f"Revisar dados do Envio #{shipping_id} e cep do remetente",
+                data=data
+            )
+
         success = 0
         failure = 0
         for shipping in shippings.filter(label__isnull=True):
@@ -213,7 +240,7 @@ class MelhorEnvioService():
             )
             if response.ok:
                 try:
-                    fields = 'id','created_at','price','format','status','protocol','volumes',
+                    fields = 'id', 'created_at', 'price', 'format', 'status', 'protocol', 'volumes',
                     info = response.json()
                     Label.objects.create(
                         shipping=shipping,
@@ -224,10 +251,12 @@ class MelhorEnvioService():
 
                 except:
                     failure += 1
-                    print(f"1-Não conseguiu adicionar itens no carrinho {response.status_code}")
+                    create_warning(shipping.id, "Respondeu página HTML ao invés de resposta de API", data)
+
             else:
                 failure += 1
-                print(f"2-Não conseguiu adicionar itens no carrinho {response.status_code}")
+                create_warning(
+                    shipping.id, f"status da resposta:{response.status_code}, resposta:{response.content}", data)
 
         return f"{success} itens adicionados ao carrinho com sucesso e {failure} itens não adicionados"
 
@@ -240,6 +269,15 @@ class MelhorEnvioService():
 
     @staticmethod
     def cart_checkout(label_ids):
+
+        def create_warning(error, data):
+            Warning.objects.create(
+                text="Não foi possível fazer checkout de etiquetas",
+                description=str(error),
+                solution=f"Verificar se todas as etiquetas estão no carrinho (IDs das etiquetas no campo de dados)",
+                data=data
+            )
+
         payload = {
             "orders": [str(label_id) for label_id in label_ids]
         }
@@ -251,14 +289,14 @@ class MelhorEnvioService():
         if response.ok:
             try:
                 checkout_data = response.json()
-                
+
                 orders = checkout_data.get('purchase', {}).get('orders', [])
                 label_ids = [order.get('id') for order in orders]
-                
+
                 fields = 'id', 'created_at', 'total', 'status'
                 data = {}
                 for field in fields:
-                    value = checkout_data.get('purchase',{}).get(field)
+                    value = checkout_data.get('purchase', {}).get(field)
                     if value:
                         data[field] = value
                 purchase = Purchase.objects.create(
@@ -267,10 +305,12 @@ class MelhorEnvioService():
                 )
 
                 return Label.objects.filter(id__in=label_ids).update(purchase=purchase, status='released')
-                
+
             except Exception as e:
-                return False
-        return False    
+                create_warning(e, payload)
+        else:
+            create_warning(f"status da resposta:{response.status_code}, resposta:{response.content}", payload)
+        return False
 
     @staticmethod
     def print_labels(purchase_id):
@@ -281,18 +321,24 @@ class MelhorEnvioService():
         data = {
             'orders': [str(label_id) for label_id in label_ids]
         }
-        response =  MelhorEnvioService.melhor_envio_request(
+        response = MelhorEnvioService.melhor_envio_request(
             url=f"api/v2/me/shipment/generate",
             method='post',
             data=data
         )
         if response.ok:
             try:
-                response.json() # may return a html page
+                response.json()  # may return a html page
             except:
+                Warning.objects.create(
+                    text="Não conseguiu gerar as etiquetas para impressão",
+                    description=f"status da resposta:{response.status_code}, resposta:{response.content}",
+                    solution=f"Verificar Compra: #{purchase_id}",
+                    data=data
+                )
                 return False
 
-        data['mode'] = 'public'
+        data['mode'] = 'public'  # anyone can see the labels
 
         response = MelhorEnvioService.melhor_envio_request(
             url=f"api/v2/me/shipment/print",
@@ -306,4 +352,10 @@ class MelhorEnvioService():
                 purchase.save()
                 return True
             except:
+                Warning.objects.create(
+                    text="Não conseguiu imprimir as etiquetas",
+                    description=f"status da resposta:{response.status_code}, resposta:{response.content}",
+                    solution=f"Verificar Compra: #{purchase_id}",
+                    data=data
+                )
                 return False
