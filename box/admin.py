@@ -7,6 +7,7 @@ from django.utils import timezone
 
 # Register your models here.
 from .models import Box, BoxItem, Shipping, ShippingOption
+from checkout.models import Label, label
 
 
 class BoxItemAdmin(admin.ModelAdmin):
@@ -114,10 +115,11 @@ class ShippingAdmin(admin.ModelAdmin):
     clear_labels.short_description = "Limpar etiquetas"
 
     def checkout(self, request, queryset):
-        ids = list(queryset.values_list('label', flat=True))
-        ids = list(filter(lambda _id: bool(_id), ids))  # remove null if exists
+        labels = Label.objects.filter(shipping__in=queryset).values('id', 'price')
+        ids = [l['id'] for l in labels]
         task_cart_checkout.delay(ids)
-        self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas")
+        total = sum([l['price'] for l in labels])
+        self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas. O valor total delas é: R${round(total,2)}")
     checkout.short_description = 'Comprar etiquetas'
 
 
