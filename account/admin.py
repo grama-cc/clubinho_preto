@@ -4,7 +4,6 @@ from django.contrib.admin import register
 from django.db.models import Count, F
 from django.utils.html import mark_safe  # Newer versions
 from finance.models import Subscription
-from django.utils.html import format_html
 from .models import Sender, Subscriber, Warning
 
 
@@ -34,6 +33,10 @@ class ShippingInline(admin.StackedInline):
     extra = 0
     fields = 'date_created', 'box', 'shipping_option_selected',
     readonly_fields = 'date_created', 'box', 'shipping_option_selected'
+    show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @register(Subscriber)
@@ -45,7 +48,16 @@ class SubscriberAdmin(admin.ModelAdmin):
     actions = 'importar_planilha', 'import_subscribers',
     inlines = SubscriptionInline, ShippingInline,
     # todo: filter by "can_send_package"
-    # self.fields['']
+
+    fieldsets = (
+        ("Informações Gerais",
+         {"fields": ("name", "email", "phone", "cpf")}),
+        ("Endereço",
+         {"fields": ("address", "addressNumber", "province", "cep", "city", "state_initials", "complement", "delivery", "note")}),
+        ("Assinatura Clubinho",
+         {"fields": ("relatedness", "relatedness_raw", "kids_name", "kids_age", "kids_gender", "kids_race", "kids_gender_raw", "kids_race_raw", "subscribing_date", "more_info", "asaas_customer_id")}),
+    )
+
 
     def get_queryset(self, request):
         return super().get_queryset(request)\
@@ -66,7 +78,6 @@ class SubscriberAdmin(admin.ModelAdmin):
 
     def _can_send_package(self, obj):
         return obj.can_send_package()
-
     _can_send_package.boolean = True
     _can_send_package.short_description = 'Campos ok?'
 
@@ -80,7 +91,6 @@ class SubscriberAdmin(admin.ModelAdmin):
         created, errors, skipped = AccountService.import_asaas_customers()
 
         modeladmin.message_user(request, f'{created} assinantes criadas, {errors} erros, {skipped} já existiam')
-
     import_subscribers.short_description = 'Importar assinantes Asaas'
 
 

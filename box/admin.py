@@ -7,7 +7,7 @@ from django.utils import timezone
 
 # Register your models here.
 from .models import Box, BoxItem, Shipping, ShippingOption
-from checkout.models import Label, label
+from checkout.models import Label
 
 
 class BoxItemAdmin(admin.ModelAdmin):
@@ -51,16 +51,25 @@ class BoxAdmin(admin.ModelAdmin):
     create_this_month_shippings.short_description = "Criar envios deste mês"
 
 
-class ShippingItemAdmin(admin.ModelAdmin):
+class ShippingOptionAdmin(admin.ModelAdmin):
     list_display = "id", "name", "company_name", "price", "delivery_time", "delivery_time_min", "delivery_time_max", "melhor_envio_id",
 
 
 class ShippingAdmin(admin.ModelAdmin):
     list_display = "id", "box", "recipient", "city", "province", "date_created", "shipping_option_selected", "user_ok", "has_label",
-    list_filter = "recipient", "box",  # todo: filter by has label
+    list_filter = "box", "recipient",  # todo: filter by has label
     # filter_horizontal = "shipping_options",
-    readonly_fields = "date_created", "label"
+    readonly_fields = "date_created", "label",
     actions = 'generate_shipping_options', 'generate_labels', 'clear_labels', 'checkout'
+
+    # Limit foreign key choices based on another field from the instance
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(ShippingAdmin, self).get_form(request, obj, **kwargs)
+        if obj:
+            form.base_fields['shipping_options'].queryset = obj.shipping_options.all()
+            form.base_fields['shipping_option_selected'].queryset = obj.shipping_options.all()
+        return form
+
 
     def get_queryset(self, request):
         return super().get_queryset(request)\
@@ -105,7 +114,7 @@ class ShippingAdmin(admin.ModelAdmin):
     def generate_labels(self, request, queryset):
         from celery_app.celery import task_add_deliveries_to_cart
         task_add_deliveries_to_cart.delay([s.id for s in queryset])
-        total = sum([s['price'] for s in queryset])
+        total = sum([getattr(s.shipping_option_selected, 'price', 0) for s in queryset])
         self.message_user(request, f"{len(queryset)} etiquetas estão sendo geradas. Isso pode demorar um pouco. O valor total delas é: R${round(total,2)}")
     generate_labels.short_description = "Gerar etiquetas"
 
@@ -127,4 +136,4 @@ class ShippingAdmin(admin.ModelAdmin):
 admin.site.register(Box, BoxAdmin)
 admin.site.register(BoxItem, BoxItemAdmin)
 admin.site.register(Shipping, ShippingAdmin)
-admin.site.register(ShippingOption, ShippingItemAdmin)
+# admin.site.register(ShippingOption, ShippingOptionAdmin)

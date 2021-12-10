@@ -63,9 +63,6 @@ def create_shipping_options(shipping_ids):
 
 
 def add_deliveries_to_cart(shipping_ids):
-    import json
-    from datetime import datetime
-
     from account.models import Sender
     from melhor_envio.service import MelhorEnvioService
 
@@ -86,6 +83,7 @@ def add_deliveries_to_cart(shipping_ids):
         
             
     elif not sender:
+        # todo create warning
         return "Missing Sender"
     elif not shippings:
         return "Missing Shippings"
