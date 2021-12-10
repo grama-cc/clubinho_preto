@@ -105,7 +105,8 @@ class ShippingAdmin(admin.ModelAdmin):
     def generate_labels(self, request, queryset):
         from celery_app.celery import task_add_deliveries_to_cart
         task_add_deliveries_to_cart.delay([s.id for s in queryset])
-        self.message_user(request, f"As etiquetas estão sendo geradas. Isso pode demorar um pouco.")
+        total = sum([s['price'] for s in queryset])
+        self.message_user(request, f"{len(queryset)} etiquetas estão sendo geradas. Isso pode demorar um pouco. O valor total delas é: R${round(total,2)}")
     generate_labels.short_description = "Gerar etiquetas"
 
     def clear_labels(self, request, queryset):

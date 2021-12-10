@@ -52,9 +52,9 @@ class AccountService:
                     **{key: customer_data.get(key, None) for key in customer_keys},
 
                     # django only
-                    ** subscriber_data
+                    **subscriber_data
                 }
-                subscriber = Subscriber.objects.create(_subscriber_data)
+                subscriber = Subscriber.objects.create(**_subscriber_data)
             except Exception as e:
                 Warning.objects.create(
                     text="Não foi possível criar Assinante",

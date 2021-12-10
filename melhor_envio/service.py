@@ -175,13 +175,12 @@ class MelhorEnvioService():
 
             data = {
                 "service": shipping.shipping_option_selected.melhor_envio_id,
-
-                # todo: agency
+                
                 # Nota: o campo agency é obrigatório para a transportadora JadLog apenas
                 # para integrações que utilizem o token gerado no painel do Melhor Envio,
                 # não se fazendo necessário para outras transportadoras ou integrações
                 # que utilizem os tokens gerados através de OAuth2.
-                # "agency": 49,
+                # "agency": JADLOG_ID,
 
 
                 "from": sender,
@@ -233,6 +232,8 @@ class MelhorEnvioService():
                     # ]
                 }
             }
+            if shipping.shipping_option_selected.company_name and 'jadlog' in shipping.shipping_option_selected.company_name.lower():
+                data['agency'] = JADLOG_ID
 
             response = MelhorEnvioService.melhor_envio_request(
                 url="api/v2/me/cart/",
@@ -247,7 +248,7 @@ class MelhorEnvioService():
                         shipping=shipping,
                         full_info=info,
                         **{field: info.get(field) for field in fields}
-                    )
+                    )   
                     success += 1
 
                 except:
