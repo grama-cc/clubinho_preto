@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import register
+from django.db.models import Count
 from .models import Subscription, PaymentHistory
 from django.contrib.auth.models import Group
 from django_celery_beat.models import ClockedSchedule, CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
@@ -7,13 +8,26 @@ from django_celery_beat.models import ClockedSchedule, CrontabSchedule, Interval
 
 class PaymentHistoryInlineAdmin(admin.TabularInline):
     model = PaymentHistory
+    extra = 0
+    readonly_fields = 'value', 'due_date', 'invoice_id', 'billingType', 'status',
+
 
 @register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('id','date', 'subscriber', 'value', 'status', 'cycle')
+    list_display = ('id', 'date', 'subscriber', 'payments', 'value', 'status', 'cycle')
     list_filter = 'status', 'billingType', 'cycle'
     inlines = (PaymentHistoryInlineAdmin,)
     actions = 'import_subscriptions', 'update_subscriptions'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request)\
+            .prefetch_related('paymenthistory_set')\
+            .select_related('subscriber')\
+            .annotate(payments=Count('paymenthistory'))
+
+    def payments(modeladmin, obj):
+        return obj.payments
+    payments.short_description = 'Pagamentos'
 
     def import_subscriptions(modeladmin, request, queryset):
         from finance.service import FinanceService
@@ -39,4 +53,3 @@ admin.site.unregister(CrontabSchedule)
 admin.site.unregister(IntervalSchedule)
 admin.site.unregister(PeriodicTask)
 admin.site.unregister(SolarSchedule)
-

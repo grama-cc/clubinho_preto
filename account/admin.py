@@ -4,14 +4,29 @@ from django.contrib.admin import register
 from django.db.models import Count, F
 from django.utils.html import mark_safe  # Newer versions
 from finance.models import Subscription
-
+from django.utils.html import format_html
 from .models import Sender, Subscriber, Warning
 
 
 class SubscriptionInline(admin.StackedInline):
     model = Subscription
-    fields = 'date', 'value', 'asaas_id', 'billingType', 'cycle', 'description', 'status', 'deleted',
-    readonly_fields = 'date', 'value', 'asaas_id', 'billingType', 'cycle', 'description', 'status', 'deleted',
+    fields = 'date', 'value', 'asaas_id', 'billingType', 'cycle', 'description', 'status', 'deleted', 'payments',
+    readonly_fields = 'date', 'value', 'asaas_id', 'billingType', 'cycle', 'description', 'status', 'deleted', 'payments'
+    show_change_link = True
+
+    def payments(self, obj):
+        fields = (['id', 'id'], ['value', 'valor'], ['due_date', 'vencimento'],
+                  ['invoice_id', 'id da cobrança'], ['billingType', 'tipo de pagamento'], ['status', 'status'])
+        payments = ''
+        for p in obj.paymenthistory_set.values():
+            payments += '<p>'
+            for field in fields:
+                payments += '<strong>{}</strong>: {}<br>'.format(field[1], p[field[0]])
+            payments += '</p>'
+            payments += '<br>'
+
+        return mark_safe(payments)
+    payments.short_description = 'Histórico de Pagamentos'
 
 
 class ShippingInline(admin.StackedInline):
@@ -38,6 +53,7 @@ class SubscriberAdmin(admin.ModelAdmin):
             .annotate(
                 shipping_count=Count('shippings'),
                 subscription_status=F('subscription__status'),
+                payments=Count('subscription__paymenthistory'),
         )
 
     def subscription_status(self, obj):
@@ -45,8 +61,8 @@ class SubscriberAdmin(admin.ModelAdmin):
     subscription_status.short_description = 'Status'
 
     def shipping_count(self, obj):
-        return obj.shipping_count
-    shipping_count.short_description = 'Envios'
+        return f"{obj.payments}/{obj.shipping_count}"
+    shipping_count.short_description = 'Pagamentos/Envios'
 
     def _can_send_package(self, obj):
         return obj.can_send_package()
@@ -101,8 +117,8 @@ class SenderAdmin(admin.ModelAdmin):
             if obj.jadlog_agency_options:
                 for agency in obj.jadlog_agency_options:
                     for field in agency.keys():
-                        response+=f'{field}: {agency[field]}<br>'
-                    response+='<br>'
+                        response += f'{field}: {agency[field]}<br>'
+                    response += '<br>'
 
             return mark_safe(response)
         except Exception as e:

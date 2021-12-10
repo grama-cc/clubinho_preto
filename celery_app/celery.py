@@ -29,6 +29,11 @@ def setup_periodic_tasks(sender, **kwargs):
     )
 
     sender.add_periodic_task(
+        crontab(minute=40, hour='*/1'),
+        task_update_payment_history.s(),
+    )
+
+    sender.add_periodic_task(
         crontab(minute=5, hour=0),
         task_get_jadlog_agencies.s(),
     )
@@ -89,3 +94,10 @@ def task_print_labels(purchase_id):
 def task_get_jadlog_agencies():
     from melhor_envio.service import MelhorEnvioService
     return MelhorEnvioService.get_jadlog_agencies()
+
+
+@app.task
+def task_update_payment_history():
+    from finance.service import FinanceService
+    return FinanceService.update_payment_history()
+
