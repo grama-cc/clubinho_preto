@@ -23,11 +23,9 @@ class BoxAdmin(admin.ModelAdmin):
     def create_this_month_shippings(self, request, queryset):
         shippings = []
 
-        # All subscribers that don't have shippings for this month
-        subscribers = Subscriber.objects.all()\
-            .select_related('subscription')\
-            .filter(subscription__status='ACTIVE')\
-            .exclude(shippings__date_created__month=timezone.now().month).distinct()
+        # All subscribers that don't have shippings for this month 
+        # and have paid this months subscription charge
+        subscribers = Subscriber.objects.allowed_shipping()
 
         # todo: make this async task
         for box in queryset:

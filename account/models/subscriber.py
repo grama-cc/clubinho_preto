@@ -4,8 +4,33 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 
+SUBSCRIPTION_SUCCESS_STATUS = 'CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'
+
+
+class SubscriberManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().order_by('name')
+
+    def allowed_shipping(self):
+        """ All subscribers who can receive a new shipment, ie:
+        - have paid this month's subscription
+        - do not have an existing shipment in the current month
+        """
+        return self.get_queryset()\
+            .select_related('subscription')\
+            .prefetch_related('subscription__paymenthistory_set')\
+            .filter(
+                subscription__status='ACTIVE',  # - have an active subscription
+                subscription__paymenthistory__due_date__month=timezone.now().month,
+                subscription__paymenthistory__status__in=SUBSCRIPTION_SUCCESS_STATUS,
+        ).exclude(
+                shippings__date_created__month=timezone.now().month
+        ).distinct()
+        
+
+
 class Subscriber(models.Model):
-    
+
     class RELATEDNESS(models.TextChoices):
         PARENT = 'PA', _('Mãe/Pai')
         GRANPARENT = 'GR', _('Avôou Avó')
@@ -34,7 +59,7 @@ class Subscriber(models.Model):
     name = models.CharField(max_length=255, null=True, verbose_name='Nome')
     cpf = models.CharField(max_length=11, null=True, verbose_name='CPF')
 
-    asaas_customer_id = models.CharField(max_length=255,blank=True, null=True)
+    asaas_customer_id = models.CharField(max_length=255, blank=True, null=True)
 
     phone = models.CharField(max_length=255, verbose_name="telefone", null=True)
     address = models.CharField(max_length=255, verbose_name="endereço de entrega", null=True)
@@ -47,18 +72,21 @@ class Subscriber(models.Model):
     state_initials = models.CharField(max_length=2, null=True, verbose_name='UF')
     note = models.CharField(max_length=255, blank=True, null=True, verbose_name='Observações de endereço')
 
-
     more_info = models.TextField(verbose_name="conta pra gente, do que a criança mais gosta", blank=True, null=True)
-    relatedness = models.CharField(max_length=2, choices=RELATEDNESS.choices, default=RELATEDNESS.PARENT, blank=True, null=True)
+    relatedness = models.CharField(max_length=2, choices=RELATEDNESS.choices,
+                                   default=RELATEDNESS.PARENT, blank=True, null=True)
     relatedness_raw = models.CharField(max_length=255, blank=True, null=True)
     kids_name = models.CharField(max_length=255, verbose_name="Nome da criança", blank=True, null=True)
     kids_age = models.IntegerField(verbose_name="Idade da criança", blank=True, null=True)
-    kids_gender = models.CharField(max_length=2, choices=GENDER.choices, default=GENDER.NO_ANSWER, blank=True, null=True)
+    kids_gender = models.CharField(max_length=2, choices=GENDER.choices,
+                                   default=GENDER.NO_ANSWER, blank=True, null=True)
     kids_race = models.CharField(max_length=2, choices=RACE.choices, default=RACE.BLACK, blank=True, null=True)
     kids_gender_raw = models.CharField(max_length=255, blank=True, null=True)
     kids_race_raw = models.CharField(max_length=255, blank=True, null=True)
     subscribing_date = models.DateTimeField(null=True)
 
+    objects = SubscriberManager()
+    no_joins = models.Manager()
 
     class Meta:
         verbose_name = "Assinante"
@@ -73,7 +101,7 @@ class Subscriber(models.Model):
         if not self.subscribing_date:
             self.subscribing_date = timezone.now()
         return super().save(*args, **kwargs)
-    
+
     def can_send_package(self):
         fields = 'name', 'email', 'phone', 'address', 'cpf', 'addressNumber', 'province', 'cep', 'city', 'state_initials',
         for field in fields:
