@@ -21,15 +21,15 @@ DELIVERY_CHOICES = {
 
 
 class Subscription(models.Model):
-    subscriber = models.OneToOneField('account.Subscriber', on_delete=models.SET_NULL, blank=True, null=True)
-    value = models.FloatField(blank=True, null=True)
-    date = models.DateTimeField(null=True)
-    asaas_id = models.CharField(max_length=255, blank=True, null=True)
-    billingType = models.CharField(max_length=255, blank=True, null=True)
-    cycle = models.CharField(max_length=255, blank=True, null=True)
-    description = models.CharField(max_length=255, blank=True, null=True)
+    subscriber = models.OneToOneField('account.Subscriber', on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Assinante')
+    value = models.FloatField(blank=True, null=True, verbose_name='Valor')
+    date = models.DateTimeField(null=True, verbose_name='Data')
+    asaas_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID Asaas')
+    billingType = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tipo de cobrança')
+    cycle = models.CharField(max_length=255, blank=True, null=True, verbose_name='Ciclo')
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name='Descrição')
     status = models.CharField(max_length=255, blank=True, null=True)
-    deleted = models.BooleanField(default=False)
+    deleted = models.BooleanField(default=False, verbose_name='Excluído')
 
     class Meta:
         verbose_name = "Assinatura"
@@ -37,11 +37,11 @@ class Subscription(models.Model):
 
 
 class PaymentHistory(models.Model):
-    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, blank=True, null=True)
-    value = models.FloatField(blank=True, null=True)
-    due_date = models.DateTimeField(null=True)
-    invoice_id = models.CharField(max_length=255, blank=True, null=True)
-    billingType = models.CharField(max_length=255, blank=True, null=True)
+    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Assinatura')
+    value = models.FloatField(blank=True, null=True, verbose_name='Valor')
+    due_date = models.DateTimeField(null=True, verbose_name='Data de vencimento')
+    invoice_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID da fatura')
+    billingType = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tipo de cobrança')
     status = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
