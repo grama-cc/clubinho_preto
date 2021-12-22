@@ -41,8 +41,11 @@ class BoxAdmin(admin.ModelAdmin):
         try:
             Shipping.objects.bulk_create(shippings)
             ids = [s.id for s in shippings]
-            task_create_shipping_options.delay(ids)
-            self.message_user(request, f"Foram criados {len(shippings)} envios")
+            if len(ids):
+                task_create_shipping_options.delay(ids)
+                self.message_user(request, f"Foram criados {len(ids)} envios")
+            else:
+                self.message_user(request, f"Não há assinantes aptos a receber envios", messages.WARNING)
         except Exception as e:
             self.message_user(request, f"Erro ao criar envios - {e}", level=messages.ERROR)
 

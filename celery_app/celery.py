@@ -46,7 +46,7 @@ def task_import_spreadsheet():
 
 
 @app.task
-def task_import_subscriptions():
+def task_import_subscriptions(_=None):
     from finance.service import FinanceService
     created, errors = FinanceService.import_asaas_subscriptions()
     return f'{created} assinaturas criadas, {errors} erros'
@@ -97,7 +97,7 @@ def task_get_jadlog_agencies():
 
 
 @app.task
-def task_update_payment_history():
+def task_update_payment_history(_=None):
     from finance.service import FinanceService
     return FinanceService.update_payment_history()
 

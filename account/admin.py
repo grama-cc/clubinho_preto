@@ -1,3 +1,4 @@
+from django.utils import tree
 from box.models import Shipping
 from django.contrib import admin
 from django.contrib.admin import register
@@ -42,12 +43,11 @@ class ShippingInline(admin.StackedInline):
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'city', 'province', '_can_send_package', 'subscription_status',
+    list_display = ('id', 'name', 'email', 'city', 'province', '_can_send_package', 'missing_field', 'subscription_status',
                     'shipping_count', 'relatedness', 'kids_race', 'asaas_customer_id')
     ordering = ('name',)
     actions = 'importar_planilha', 'import_subscribers',
     inlines = SubscriptionInline, ShippingInline,
-    # todo: filter by "can_send_package"
 
     fieldsets = (
         ("Informações Gerais",
@@ -77,9 +77,16 @@ class SubscriberAdmin(admin.ModelAdmin):
     shipping_count.short_description = 'Pagamentos/Envios'
 
     def _can_send_package(self, obj):
-        return obj.can_send_package()
+        return obj.can_send_package(get_field=True) == True
     _can_send_package.boolean = True
     _can_send_package.short_description = 'Campos ok?'
+
+    def missing_field(self, obj):
+        can_send = obj.can_send_package(get_field=True)
+        if can_send is True:
+            return None
+        return can_send
+    missing_field.short_description = 'Campo faltando'
 
     def importar_planilha(modeladmin, request, queryset):
         from celery_app.celery import task_import_spreadsheet
@@ -116,7 +123,8 @@ class SenderAdmin(admin.ModelAdmin):
     )
 
     def has_add_permission(self, request, obj=None):
-        return False
+        # can only create if there are none existing
+        return Sender.objects.count() == 0
 
     def has_delete_permission(self, request, obj=None):
         return False

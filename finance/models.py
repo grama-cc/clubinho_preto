@@ -37,7 +37,7 @@ class Subscription(models.Model):
 
 
 class PaymentHistory(models.Model):
-    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Assinatura')
+    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, blank=True, null=True, verbose_name='Assinatura')
     value = models.FloatField(blank=True, null=True, verbose_name='Valor')
     due_date = models.DateTimeField(null=True, verbose_name='Data de vencimento')
     invoice_id = models.CharField(max_length=255, blank=True, null=True, verbose_name='ID da fatura')

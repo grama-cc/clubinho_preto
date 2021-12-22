@@ -11,6 +11,12 @@ Plataforma de administração do clubinho Preto, desenvolvido em Django
 #### Then simply apply the migrations: 
 
     $ python manage.py migrate
+
+
+#### Create an admin user: 
+
+    $ python manage.py createsuperuser
+
     
 
 #### Populate default instances: 

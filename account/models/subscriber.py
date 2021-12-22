@@ -102,9 +102,9 @@ class Subscriber(models.Model):
             self.subscribing_date = timezone.now()
         return super().save(*args, **kwargs)
 
-    def can_send_package(self):
+    def can_send_package(self, get_field=False):
         fields = 'name', 'email', 'phone', 'address', 'cpf', 'addressNumber', 'province', 'cep', 'city', 'state_initials',
         for field in fields:
             if not getattr(self, field):
-                return False
+                return field if get_field else False
         return True

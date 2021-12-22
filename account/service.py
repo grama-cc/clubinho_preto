@@ -13,26 +13,24 @@ class AccountService:
     def list_asaas_customer_id():
         return Subscriber.objects.filter(asaas_customer_id__isnull=False).values_list('asaas_customer_id', flat=True)
 
-
     @staticmethod
     def create_asaas_customer(_customer_data):
-        
+
         # Bypass "This querydict instance is immutable"
         # And get first item from each item on request.POST
-        customer_data = {key:_customer_data.get(key,[None][0]) for key in _customer_data.keys()} 
+        customer_data = {key: _customer_data.get(key, [None][0]) for key in _customer_data.keys()}
 
         # separate asaas data from application data
         subscriber_keys = ['relatedness', 'more_info', 'relatedness', 'relatedness_raw', 'kids_name',
-                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw', 
+                           'kids_age', 'kids_gender', 'kids_race', 'kids_gender_raw', 'kids_race_raw',
                            'subscribing_date', 'delivery', 'city', 'state_initials']
         subscriber_data = {key: customer_data[key] for key in customer_data if key in subscriber_keys}
 
         # Add complete subscriber info to Asaas customer
         observations = ''
         for key in subscriber_keys:
-            observations+= f"{key}:{customer_data.get(key)};"
+            observations += f"{key}:{customer_data.get(key)};"
         customer_data['observations'] = observations
-
 
         url = f"{ASAAS_URL}/customers"
         response = requests.post(url, json=customer_data, headers={'access_token': ASAAS_KEY})
@@ -44,9 +42,9 @@ class AccountService:
             try:
                 _subscriber_data = {
                     # different keys from asaas
-                    'asaas_customer_id':data.get('id', None),
-                    'cep':data.get('postalCode', None),
-                    'cpf':data.get('cpfCnpj', None),
+                    'asaas_customer_id': data.get('id', None),
+                    'cep': data.get('postalCode', None),
+                    'cpf': data.get('cpfCnpj', None),
 
                     # same as asaas form
                     **{key: customer_data.get(key, None) for key in customer_keys},
@@ -83,14 +81,8 @@ class AccountService:
                 skipped += 1
                 continue
 
-            # disabled for lack of 'more_details' or 'description' field
-            # concat other fields
-            # more_info_fields = 'cpfCnpj', 'additionalEmails'
-            # field_values = [f"{field}: {asaas_customer.get(field, '')}" for field in more_info_fields]
-            # more_info = '\n'.join(field_values)
-
             email = asaas_customer.get('email', None) or f"{uuid4().int}@sem_email.com"
-            keys = ['phone', 'address', 'addressNumber', 'complement', 'province']
+            keys = ['phone', 'address', 'addressNumber', 'complement', 'province', 'city', ]
 
             data = {
                 'asaas_customer_id': asaas_customer.get('id'),
@@ -98,9 +90,9 @@ class AccountService:
                 'email': email,
                 'cep': asaas_customer.get('postalCode'),
                 'cpf': asaas_customer.get('cpfCnpj'),
+                'state_initials': asaas_customer.get('state'),
 
                 **{key: asaas_customer.get(key, None) for key in keys},
-                # 'more_info': more_info,
             }
             try:
                 print(Subscriber.objects.create(**data))
