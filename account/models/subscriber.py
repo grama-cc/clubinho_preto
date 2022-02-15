@@ -1,4 +1,5 @@
 
+from datetime import datetime
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -53,7 +54,7 @@ class Subscriber(models.Model):
         NATIVE = 'NA', _('Indígena')
         BLACK_NATIVE = 'BN', _('Preta e Indígena')
 
-    # ! Update admin fields if you add new fields
+    # ! Update admin fields if you add new ones here
 
     email = models.EmailField()
     name = models.CharField(max_length=255, null=True, verbose_name='Nome')
@@ -74,16 +75,16 @@ class Subscriber(models.Model):
 
     more_info = models.TextField(verbose_name="conta pra gente, do que a criança mais gosta", blank=True, null=True)
     relatedness = models.CharField(max_length=2, choices=RELATEDNESS.choices,
-                                   default=RELATEDNESS.PARENT, blank=True, null=True)
+                                   default=RELATEDNESS.PARENT, blank=True, null=True, verbose_name='parentesco')
     relatedness_raw = models.CharField(max_length=255, blank=True, null=True)
     kids_name = models.CharField(max_length=255, verbose_name="Nome da criança", blank=True, null=True)
     kids_age = models.IntegerField(verbose_name="Idade da criança", blank=True, null=True)
     kids_gender = models.CharField(max_length=2, choices=GENDER.choices,
-                                   default=GENDER.NO_ANSWER, blank=True, null=True)
-    kids_race = models.CharField(max_length=2, choices=RACE.choices, default=RACE.BLACK, blank=True, null=True)
+                                   default=GENDER.NO_ANSWER, blank=True, null=True, verbose_name="sexo da criança")
+    kids_race = models.CharField(max_length=2, choices=RACE.choices, default=RACE.BLACK, blank=True, null=True, verbose_name="Cor da criança")
     kids_gender_raw = models.CharField(max_length=255, blank=True, null=True)
     kids_race_raw = models.CharField(max_length=255, blank=True, null=True)
-    subscribing_date = models.DateTimeField(null=True)
+    subscribing_date = models.DateTimeField(null=True, verbose_name='Data de inscrição')
 
     objects = SubscriberManager()
     no_joins = models.Manager()

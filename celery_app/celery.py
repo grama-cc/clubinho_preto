@@ -19,12 +19,12 @@ def setup_periodic_tasks(sender, **kwargs):
     )
 
     sender.add_periodic_task(
-        crontab(minute=15, hour='*/1'),
+        crontab(minute=10, hour='*/1'),
         task_update_subscriptions.s(),
     )
 
     sender.add_periodic_task(
-        crontab(minute=30, hour='*/1'),
+        crontab(minute=20, hour='*/1'),
         task_import_subscriptions.s(),
     )
 
@@ -53,7 +53,7 @@ def task_import_subscriptions(_=None):
 
 
 @app.task
-def task_update_subscriptions():
+def task_update_subscriptions(_=None):
     from finance.service import FinanceService
     updated, errors = FinanceService.update_asaas_subscriptions()
     return f'{updated} assinaturas atualizadas, {errors} erros'

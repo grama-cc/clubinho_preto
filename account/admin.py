@@ -7,6 +7,12 @@ from django.utils.html import mark_safe  # Newer versions
 from finance.models import Subscription
 from .models import Sender, Subscriber, Warning
 
+# Text to put at the end of each page's <title>.
+admin.site.site_title = "Clubinho Preto"
+
+# Text to put in each page's <h1> (and above login form).
+admin.site.site_header = "Clubinho Preto Admin"
+
 
 class SubscriptionInline(admin.StackedInline):
     model = Subscription
@@ -43,11 +49,12 @@ class ShippingInline(admin.StackedInline):
 @register(Subscriber)
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
-    list_display = ('id', 'name', 'email', 'city', 'province', '_can_send_package', 'missing_field', 'subscription_status',
-                    'shipping_count', 'relatedness', 'kids_race', 'asaas_customer_id')
+    list_display = ('id', 'name', 'email', 'city', 'province', 'relatedness', 'kids_age', 'kids_race',
+                    'missing_field', 'shipping_count')
     ordering = ('name',)
-    actions = 'importar_planilha', 'import_subscribers',
+    actions = 'update_asaas_info', # 'importar_planilha', 'import_subscribers', 
     inlines = SubscriptionInline, ShippingInline,
+    list_filter = 'kids_race', 'kids_age',
 
     fieldsets = (
         ("Informações Gerais",
@@ -58,7 +65,6 @@ class SubscriberAdmin(admin.ModelAdmin):
          {"fields": ("relatedness", "relatedness_raw", "kids_name", "kids_age", "kids_gender", "kids_race", "kids_gender_raw", "kids_race_raw", "subscribing_date", "more_info", "asaas_customer_id")}),
     )
 
-
     def get_queryset(self, request):
         return super().get_queryset(request)\
             .select_related('subscription')\
@@ -68,18 +74,18 @@ class SubscriberAdmin(admin.ModelAdmin):
                 payments=Count('subscription__paymenthistory'),
         )
 
-    def subscription_status(self, obj):
-        return obj.subscription_status
-    subscription_status.short_description = 'Status'
+    # def subscription_status(self, obj):
+    #     return obj.subscription_status
+    # subscription_status.short_description = 'Status'    
 
     def shipping_count(self, obj):
         return f"{obj.payments}/{obj.shipping_count}"
     shipping_count.short_description = 'Pagamentos/Envios'
 
-    def _can_send_package(self, obj):
-        return obj.can_send_package(get_field=True) == True
-    _can_send_package.boolean = True
-    _can_send_package.short_description = 'Campos ok?'
+    # def _can_send_package(self, obj):
+    #     return obj.can_send_package(get_field=True) == True
+    # _can_send_package.boolean = True
+    # _can_send_package.short_description = 'Campos ok?'
 
     def missing_field(self, obj):
         can_send = obj.can_send_package(get_field=True)
@@ -100,6 +106,17 @@ class SubscriberAdmin(admin.ModelAdmin):
         modeladmin.message_user(request, f'{created} assinantes criadas, {errors} erros, {skipped} já existiam')
     import_subscribers.short_description = 'Importar assinantes Asaas'
 
+    def update_asaas_info(modeladmin, request, queryset):
+        from celery import chain
+        from celery_app.celery import task_import_asaas_customers, task_import_subscriptions, task_update_subscriptions, task_update_payment_history
+        res = chain(
+            task_import_asaas_customers.s(),
+            task_import_subscriptions.s(),
+            task_update_subscriptions.s(),
+            task_update_payment_history.s()
+            )()
+        res.get()
+    update_asaas_info.short_description = 'Atualizar dados Asaas'
 
 @register(Sender)
 class SenderAdmin(admin.ModelAdmin):

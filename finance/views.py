@@ -53,7 +53,7 @@ class SubscribeView(View):
             # todo: send mail? or create Form error model
             message = json.loads(
                 asaas_response.content) if asaas_response.content else 'Ocorreu um erro interno. Por favor entre em contato'
-            if message and hasattr(message, 'errors'):
+            if message and type(message) == dict and message.get('errors'):
                 errors = [error.get('description') for error in message.get('errors')]
                 message = '\n'.join(errors)
             return render(request, 'subscription.html', {
