@@ -110,6 +110,7 @@ class ShippingAdmin(admin.ModelAdmin):
 
         ids = list(queryset.values_list('id', flat=True))
         task_create_shipping_options.delay(ids)
+        self.message_user(request, f"{len(ids)} envios estão sendo gerados. Isso pode demorar um pouco. Por favor atualize a página para ver os resultados.")
     generate_shipping_options.short_description = "Gerar opções de envio"
 
     def generate_labels(self, request, queryset):

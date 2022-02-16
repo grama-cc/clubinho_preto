@@ -104,7 +104,7 @@ class MelhorEnvioService():
         Make a request to Melhor Envio API and get avaliable shipping options with passed params
         """
 
-        def create_warning(error):
+        def create_warning(error, data):
             Warning.objects.create(
                 text="Não foi possível criar opções de envio",
                 description=str(error),
@@ -211,7 +211,7 @@ class MelhorEnvioService():
                     "receipt": shipping.box.receipt,
                     "own_hand": shipping.box.own_hand,
                     "reverse": False,
-                    "non_commercial": False,
+                    "non_commercial": True,
 
 
                     # Nota: para transportadoras privadas (todas menos Correios),
@@ -220,9 +220,10 @@ class MelhorEnvioService():
                     # um envio não comercial (com declaração de conteúdo), para isto deve
                     # ser setada a flag options.non_commercial como true.
 
-                    "invoice": {
-                        "key": nfe
-                    },
+                    # "invoice": {
+                    #     "key": nfe
+                    # },
+                    
                     # "platform": "Nome da Plataforma",
                     # "tags": [
                     #     {

@@ -19,6 +19,24 @@ DELIVERY_CHOICES = {
     },
 }
 
+SUBSCRIPTION_DICT = {
+    "PENDING": "Pendente",
+    "RECEIVED": "Recebida",
+    "CONFIRMED": "Confirmada",
+    "OVERDUE": "Vencida",
+    "REFUNDED": "Estornada",
+    "RECEIVED_IN_CASH": "Recebida em dinheiro",
+    "REFUND_REQUESTED": "Estorno Solicitado",
+    "CHARGEBACK_REQUESTED": "Recebido chargeback",
+    "CHARGEBACK_DISPUTE": "Em disputa de chargeback",
+    "AWAITING_CHARGEBACK_REVERSAL": "Aguardando repasse",
+    "DUNNING_REQUESTED": "Em processo de negativação",
+    "DUNNING_RECEIVED": "Recuperada",
+    "AWAITING_RISK_ANALYSIS": "Pagamento em análise",
+}
+
+SUBSCRIPTION_SUCCESS_STATUS = 'CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'
+
 
 class Subscription(models.Model):
     subscriber = models.OneToOneField('account.Subscriber', on_delete=models.SET_NULL, blank=True, null=True, verbose_name='Assinante')

@@ -1,10 +1,11 @@
-from django.utils import tree
 from box.models import Shipping
 from django.contrib import admin
 from django.contrib.admin import register
-from django.db.models import Count, F
+from django.db.models import Count
+from django.db.models.expressions import OuterRef, Subquery
 from django.utils.html import mark_safe  # Newer versions
-from finance.models import Subscription
+from finance.models import (PaymentHistory, Subscription, SUBSCRIPTION_DICT)
+
 from .models import Sender, Subscriber, Warning
 
 # Text to put at the end of each page's <title>.
@@ -50,9 +51,9 @@ class ShippingInline(admin.StackedInline):
 class SubscriberAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'relatedness_raw', 'kids_race_raw',)
     list_display = ('id', 'name', 'email', 'city', 'province', 'relatedness', 'kids_age', 'kids_race',
-                    'missing_field', 'shipping_count')
+                    'last_payment_status', 'missing_field', 'shipping_count')
     ordering = ('name',)
-    actions = 'update_asaas_info', # 'importar_planilha', 'import_subscribers', 
+    actions = 'update_asaas_info',  # 'importar_planilha', 'import_subscribers',
     inlines = SubscriptionInline, ShippingInline,
     list_filter = 'kids_race', 'kids_age',
 
@@ -66,17 +67,23 @@ class SubscriberAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
+        last_payment = Subquery(PaymentHistory.objects.filter(
+            subscription__subscriber_id=OuterRef("id"),
+        ).order_by("-due_date").values('status')[:1])
+
         return super().get_queryset(request)\
             .select_related('subscription')\
             .annotate(
                 shipping_count=Count('shippings'),
-                subscription_status=F('subscription__status'),
+                last_payment_status=last_payment,
                 payments=Count('subscription__paymenthistory'),
         )
 
-    # def subscription_status(self, obj):
-    #     return obj.subscription_status
-    # subscription_status.short_description = 'Status'    
+    def last_payment_status(self, obj):
+        status = obj.last_payment_status
+        return SUBSCRIPTION_DICT.get(status, status)
+
+    last_payment_status.short_description = 'Status'
 
     def shipping_count(self, obj):
         return f"{obj.payments}/{obj.shipping_count}"
@@ -108,15 +115,19 @@ class SubscriberAdmin(admin.ModelAdmin):
 
     def update_asaas_info(modeladmin, request, queryset):
         from celery import chain
-        from celery_app.celery import task_import_asaas_customers, task_import_subscriptions, task_update_subscriptions, task_update_payment_history
+        from celery_app.celery import (task_import_asaas_customers,
+                                       task_import_subscriptions,
+                                       task_update_payment_history,
+                                       task_update_subscriptions)
         res = chain(
             task_import_asaas_customers.s(),
             task_import_subscriptions.s(),
             task_update_subscriptions.s(),
             task_update_payment_history.s()
-            )()
+        )()
         res.get()
     update_asaas_info.short_description = 'Atualizar dados Asaas'
+
 
 @register(Sender)
 class SenderAdmin(admin.ModelAdmin):

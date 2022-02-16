@@ -1,10 +1,16 @@
 from django.contrib import admin
 from django.contrib.admin import register
-from django.db.models import Count, Max, JSONField
-from django.db.models.expressions import OuterRef, Subquery
-from .models import Subscription, PaymentHistory
 from django.contrib.auth.models import Group
-from django_celery_beat.models import ClockedSchedule, CrontabSchedule, IntervalSchedule, PeriodicTask, SolarSchedule
+from django.db.models import Count
+from django.db.models.expressions import OuterRef, Subquery
+from django_celery_beat.models import (ClockedSchedule, CrontabSchedule,
+                                       IntervalSchedule, PeriodicTask,
+                                       SolarSchedule)
+
+from finance.models import SUBSCRIPTION_DICT
+
+from .models import PaymentHistory, Subscription
+
 
 
 class PaymentHistoryInlineAdmin(admin.TabularInline):
@@ -42,7 +48,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
             if hasattr(obj, 'last_charge_date') and obj.last_charge_date else 'S/ data'
         status = obj.last_charge_status \
             if hasattr(obj, 'last_charge_status') and obj.last_charge_status else 'S/ status'
-        return f'{date} - {status}'
+        return f'{date} - {SUBSCRIPTION_DICT.get(status, status)}'
     last_charge.short_description = 'Última cobrança'
 
     def import_subscriptions(modeladmin, request, queryset):
