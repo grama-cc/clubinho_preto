@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.views import View
 from finance.models import DELIVERY_CHOICES
 from finance.service import FinanceService
+from celery_app.celery import task_import_subscriptions
 # Create your views here.
 
 
@@ -26,20 +27,19 @@ class SubscribeView(View):
                 })
         delivery_choice = DELIVERY_CHOICES.get(delivery_choice)
 
-        # print(f'delivery ok {delivery_choice}')
         asaas_response, subscriber = AccountService.create_asaas_customer(request.POST)
         # At this point you may or may not have a Subscriber instance, if not, an email has been sent to the application admins
-        # print(f'asaas_response ok {asaas_response.content}')
-        # print(f'subscriber {subscriber}')
 
         if asaas_response.ok:
-            # Create payment request (in Asaas) and send paymentLink to user
+            # Create Asaas subscription
             customer_id = asaas_response.json().get('id')
             payment_response = FinanceService.create_asaas_subscription(customer_id, delivery_choice)
-            # print(f'payment_response {payment_response}')
 
             if payment_response and payment_response.get('id'):
-
+                # Import recenetly created subscription
+                task_import_subscriptions.delay()
+                
+                # return success page
                 context = {'email': subscriber.email if subscriber else None}
                 return render(request, 'success.html', context)
 

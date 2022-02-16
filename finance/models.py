@@ -47,3 +47,11 @@ class PaymentHistory(models.Model):
     class Meta:
         verbose_name = "Histórico de Pagamento"
         verbose_name_plural = "Histórico de Pagamentos"
+
+
+def fetch_payments_history(sender, instance, created, *args, **kwargs):
+    if created:
+        from celery_app.celery import task_update_payment_history
+        task_update_payment_history.delay([instance.id])
+
+models.signals.post_save.connect(fetch_payments_history, sender=Subscription)
