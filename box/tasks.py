@@ -63,7 +63,7 @@ def create_shipping_options(shipping_ids):
 
 
 def add_deliveries_to_cart(shipping_ids):
-    from account.models import Sender
+    from account.models import Sender, Warning
     from melhor_envio.service import MelhorEnvioService
 
     from box.models.shipping import Shipping
@@ -76,14 +76,22 @@ def add_deliveries_to_cart(shipping_ids):
         id__in=shipping_ids,
         shipping_option_selected__isnull=False,
         box__isnull=False,
-        recipient__isnull=False
+        recipient__isnull=False,
+        label__isnull=True
     )
     if shippings and sender:
         return MelhorEnvioService.add_items_to_cart(shippings, sender)
-        
-            
+
     elif not sender:
-        # todo create warning
-        return "Missing Sender"
+        Warning.objects.create(
+                text="Não há um remetente para criar os envios.",
+                solution=f"Criar um novo remetente. Veja a documentação do projeto (README.md) para mais informações."
+            )
+        return []
     elif not shippings:
-        return "Missing Shippings"
+        Warning.objects.create(
+                text="Não há envios válidos para gerar etiquetas.",
+                description="Para gerar as etiquetas, os envios precisam: ter uma opção de frete selecionada, ter uma caixa, um assinante e não possuir uma etiqueta."
+                solution=f"Caso o envio já possua uma etiqueta, use a ação 'Limpar etiquetas' do Admin 'Envios'"
+            )
+        return []

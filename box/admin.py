@@ -1,13 +1,15 @@
 from account.models import Sender, Subscriber
+from celery import chain
 from celery_app.celery import task_cart_checkout, task_create_shipping_options
+from checkout.models import Label
+from checkout.models.purchase import Purchase
 from django.contrib import admin
 from django.core.checks import messages
 from django.db.models import F
-from django.utils import timezone
+from django.db.models.expressions import OuterRef, Subquery
+from django.utils.html import mark_safe  # Newer versions
 
-# Register your models here.
-from .models import Box, BoxItem, Shipping, ShippingOption
-from checkout.models import Label
+from .models import Box, BoxItem, Shipping
 
 
 class BoxItemAdmin(admin.ModelAdmin):
@@ -57,11 +59,10 @@ class ShippingOptionAdmin(admin.ModelAdmin):
 
 
 class ShippingAdmin(admin.ModelAdmin):
-    list_display = "id", "box", "recipient", "city", "province", "date_created", "shipping_option_selected", "user_ok", "has_label",
-    list_filter = "box", "recipient",  # todo: filter by has label
-    # filter_horizontal = "shipping_options",
+    list_display = "id", "box", "recipient", "destination", "date_created", "shipping_option_selected", "user_ok", "has_label", "label_link",
+    list_filter = "box", "recipient",
     readonly_fields = "date_created", "label",
-    actions = 'generate_shipping_options', 'generate_labels', 'clear_labels', 'checkout'
+    actions = 'generate_shipping_options', 'process_all_shippings', 'clear_labels',
 
     # Limit foreign key choices based on another field from the instance
     def get_form(self, request, obj=None, **kwargs):
@@ -73,20 +74,24 @@ class ShippingAdmin(admin.ModelAdmin):
 
 
     def get_queryset(self, request):
+        # Annotate label pdf link for ease of use
+        label_purchase_link = Subquery(Purchase.objects.filter(
+            label__shipping=OuterRef("id"),
+        ).order_by("-created_at").values('print_url')[:1])
+
         return super().get_queryset(request)\
-            .select_related('box', 'recipient')\
+            .select_related('box', 'recipient', 'shipping_option_selected', 'label')\
+            .prefetch_related('shipping_options')\
             .annotate(
+                label_link=label_purchase_link,
                 city=F('recipient__city'),
                 province=F('recipient__province'),
         )
 
-    def city(self, obj):
-        return obj.city
-    city.short_description = "Cidade"
-
-    def province(self, obj):
-        return obj.province
-    province.short_description = "Bairro"
+    #  region Fields
+    def destination(self, obj):
+        return ' - '.join([obj.city, obj.province])
+    destination.short_description = "Cidade / Bairro"
 
     def user_ok(self, obj):
         if obj.recipient:
@@ -98,8 +103,16 @@ class ShippingAdmin(admin.ModelAdmin):
     def has_label(self, obj):
         return hasattr(obj, 'label')
     has_label.boolean = True
-    has_label.short_description = "Etiqueta"
+    has_label.short_description = "Tem Etiqueta"
 
+    def label_link(self, obj):
+        if obj.label_link:
+            return mark_safe(f'<a href="{obj.label_link}" target="_blank">link da etiqueta</a>')
+    label_link.short_description = "Link Etiqueta"
+
+    # endregion Fields
+
+    # region Actons
     def generate_shipping_options(self, request, queryset):
         from celery_app.celery import task_create_shipping_options
 
@@ -112,27 +125,31 @@ class ShippingAdmin(admin.ModelAdmin):
         task_create_shipping_options.delay(ids)
         self.message_user(request, f"{len(ids)} envios estão sendo gerados. Isso pode demorar um pouco. Por favor atualize a página para ver os resultados.")
     generate_shipping_options.short_description = "Gerar opções de envio"
-
-    def generate_labels(self, request, queryset):
-        from celery_app.celery import task_add_deliveries_to_cart
-        task_add_deliveries_to_cart.delay([s.id for s in queryset])
-        total = sum([getattr(s.shipping_option_selected, 'price', 0) for s in queryset])
-        self.message_user(request, f"{len(queryset)} etiquetas estão sendo geradas. Isso pode demorar um pouco. O valor total delas é: R${round(total,2)}")
-    generate_labels.short_description = "Gerar etiquetas"
-
+    
     def clear_labels(self, request, queryset):
         from checkout.models import Label
         count, _ = Label.objects.filter(shipping__in=queryset).delete()
         self.message_user(request, f"{count} etiquetas foram apagadas.")
     clear_labels.short_description = "Limpar etiquetas"
+    
+    def process_all_shippings(self, request, queryset):
+        from celery_app.celery import task_add_deliveries_to_cart
 
-    def checkout(self, request, queryset):
-        labels = Label.objects.filter(shipping__in=queryset).values('id', 'price')
-        ids = [l['id'] for l in labels]
-        task_cart_checkout.delay(ids)
-        total = sum([l['price'] for l in labels])
-        self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas. O valor total delas é: R${round(total,2)}")
-    checkout.short_description = 'Comprar etiquetas'
+        # Do not regenerate labels if there is a label
+        queryset = queryset.filter(label__isnull=True)
+        if queryset:
+            labels_total_price = sum([getattr(s.shipping_option_selected, 'price', 0) for s in queryset])
+            # label_ids = list(Label.objects.filter(shipping__in=queryset.filter(label__isnull=True)).values_list('id', flat=True))
+            
+            chain(
+                task_add_deliveries_to_cart.s([s.id for s in queryset]),
+                task_cart_checkout.s()
+            )().get()
+            
+            self.message_user(request, f"Gerando {len(queryset)} etiquetas. O valor total delas é: R${round(labels_total_price,2)}")
+        else:
+            self.message_user(request, f"Não há envios sem etiquetas para serem geradas.", level=messages.WARNING)
+    process_all_shippings.short_description = "Processar todos os envios"
 
 
 admin.site.register(Box, BoxAdmin)

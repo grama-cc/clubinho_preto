@@ -163,15 +163,11 @@ class MelhorEnvioService():
                 data=data
             )
 
-        success = 0
-        failure = 0
-        for shipping in shippings.filter(label__isnull=True):
+        labels = []
+        for shipping in shippings:
 
             recipient = shipping.recipient
             same_name_subscriber_fields = 'name', 'email', 'phone', 'address', 'complement',
-
-            # TODO: NFE
-            nfe = "31190307586261000184550010000092481404848162"
 
             data = {
                 "service": shipping.shipping_option_selected.melhor_envio_id,
@@ -233,6 +229,7 @@ class MelhorEnvioService():
                     # ]
                 }
             }
+
             if shipping.shipping_option_selected.company_name and 'jadlog' in shipping.shipping_option_selected.company_name.lower():
                 data['agency'] = JADLOG_ID
 
@@ -244,24 +241,19 @@ class MelhorEnvioService():
             if response.ok:
                 try:
                     fields = 'id', 'created_at', 'price', 'format', 'status', 'protocol', 'volumes',
-                    info = response.json()
-                    Label.objects.create(
+                    info = response.json() # the error occurs here, when a HTML page cannot be converted to json
+                    label = Label.objects.create(
                         shipping=shipping,
                         full_info=info,
                         **{field: info.get(field) for field in fields}
                     )   
-                    success += 1
-
+                    labels.append(label)
                 except:
-                    failure += 1
                     create_warning(shipping.id, "Respondeu página HTML ao invés de resposta de API", data)
-
             else:
-                failure += 1
                 create_warning(
                     shipping.id, f"status da resposta:{response.status_code}, resposta:{response.content}", data)
-
-        return f"{success} itens adicionados ao carrinho com sucesso e {failure} itens não adicionados"
+        return [l.id for l in labels]
 
     @staticmethod
     def remove_label_from_cart(label_id):
