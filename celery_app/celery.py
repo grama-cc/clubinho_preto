@@ -1,6 +1,7 @@
 import os
-from celery.schedules import crontab
+
 from celery import Celery
+from celery.schedules import crontab
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'clubinho_preto.settings')
@@ -12,6 +13,11 @@ app.conf.broker_transport_options = {'visibility_timeout': 3600}
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
+
+    sender.add_periodic_task(
+        crontab(minute=0, hour=0),
+        clear_old_warnings.s(),
+    )
 
     sender.add_periodic_task(
         crontab(minute=0, hour='*/12'),
@@ -101,3 +107,12 @@ def task_update_payment_history(_=None):
     from finance.service import FinanceService
     return FinanceService.update_payment_history()
 
+
+@app.task
+def clear_old_warnings():
+    from datetime import timedelta
+
+    from account.models import Warning
+    from django.utils import timezone
+    _7_days_ago = timezone.now() - timedelta(days=7)
+    Warning.objects.filter(created_at__lt=_7_days_ago).delete()
