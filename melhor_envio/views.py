@@ -1,8 +1,5 @@
-import requests
 from clubinho_preto.settings import (MELHORENVIO_CLIENT_ID,
-                                     MELHORENVIO_REDIRECT_URL,
-                                     MELHORENVIO_SECRET, MELHORENVIO_URL)
-from django.core.cache import cache
+                                     MELHORENVIO_REDIRECT_URL, MELHORENVIO_URL)
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views import View

@@ -16,7 +16,6 @@ Plataforma de administração do clubinho Preto, desenvolvido em Django
 #### Create an admin user: 
 
     $ python manage.py createsuperuser
-
     
 
 #### Populate default instances: 

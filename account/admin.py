@@ -14,6 +14,8 @@ admin.site.site_title = "Clubinho Preto"
 # Text to put in each page's <h1> (and above login form).
 admin.site.site_header = "Clubinho Preto Admin"
 
+admin.site.site_url = '/authorize_application'
+
 
 class SubscriptionInline(admin.StackedInline):
     model = Subscription
