@@ -66,7 +66,7 @@ def task_update_subscriptions(_=None):
 
 
 @app.task
-def task_import_asaas_customers():
+def task_import_asaas_customers(_=None):
     from account.service import AccountService
     created, errors, skipped = AccountService.import_asaas_customers()
     return f'{created} clientes criados, {errors} erros'
