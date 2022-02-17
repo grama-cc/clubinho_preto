@@ -2,7 +2,7 @@ import requests
 from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
 from account.models import Warning
 from .models import Subscriber
-
+import json
 
 class AccountService:
     @staticmethod
@@ -82,7 +82,15 @@ class AccountService:
                 continue
 
             email = asaas_customer.get('email', None) or f"{uuid4().int}@sem_email.com"
-            keys = ['phone', 'address', 'addressNumber', 'complement', 'province', 'city', ]
+            keys = ['phone', 'address', 'addressNumber', 'complement', 'province']
+            
+            # parse from string to dict
+            _observations = asaas_customer.get('observations','').split(';')
+            observations = {item.split(':')[0]: item.split(':')[1] for item in _observations if ':' in item}
+            # remove keys that are not relevant
+            items_to_remove = list(filter(lambda key_value:  key_value[1].strip() in ['None', ''],observations.items()))
+            for key, value in items_to_remove:
+                observations.pop(key)
 
             data = {
                 'asaas_customer_id': asaas_customer.get('id'),
@@ -93,6 +101,7 @@ class AccountService:
                 'state_initials': asaas_customer.get('state'),
 
                 **{key: asaas_customer.get(key, None) for key in keys},
+                **observations
             }
             try:
                 print(Subscriber.objects.create(**data))
