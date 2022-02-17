@@ -91,7 +91,7 @@ def add_deliveries_to_cart(shipping_ids):
     elif not shippings:
         Warning.objects.create(
                 text="Não há envios válidos para gerar etiquetas.",
-                description="Para gerar as etiquetas, os envios precisam: ter uma opção de frete selecionada, ter uma caixa, um assinante e não possuir uma etiqueta."
+                description="Para gerar as etiquetas, os envios precisam: ter uma opção de frete selecionada, ter uma caixa, um assinante e não possuir uma etiqueta.",
                 solution=f"Caso o envio já possua uma etiqueta, use a ação 'Limpar etiquetas' do Admin 'Envios'"
             )
         return []
