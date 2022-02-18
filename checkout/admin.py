@@ -1,30 +1,28 @@
+from os import readlink
 from django.contrib import admin
 from django.core.checks import messages
 from .models import Label, Purchase
 from django.utils.html import mark_safe  # Newer versions
-from celery_app.celery import task_print_labels, task_cart_checkout
+from celery_app.celery import task_print_labels
 # Register your models here.
 
 
-class LabelAdmin(admin.ModelAdmin):
-    list_display = 'id', 'price', 'status', 'shipping', 'is_paid'
-    actions = 'checkout',
-
-    def is_paid(self, obj):
-        return bool(obj.purchase)
-    is_paid.boolean = True
-    is_paid.short_description = 'Pago?'
-
-    def checkout(self, request, queryset):
-        ids = list(queryset.values_list('id', flat=True))
-        task_cart_checkout.delay(ids)
-        self.message_user(request, f"{len(ids)} etiquetas estão sendo processadas")
-    checkout.short_description = 'Comprar etiquetas'
-
+class LabelInline(admin.StackedInline):
+    model = Label
+    extra = 0 
+    fields = [f.name for f in Label._meta.fields]
+    readonly_fields = fields
 
 class PurchaseAdmin(admin.ModelAdmin):
-    list_display = 'id', 'total', 'status', 'link'
+    list_display = 'id', 'created_at', 'total', 'status', 'link', 'labels'
+    search_fields = 'label__id',
     actions = 'print_labels',
+    ordering = '-created_at',
+    inlines = LabelInline,
+
+    def labels(self, obj):
+        return mark_safe('<br>'.join([str(label.id) for label in obj.label_set.all()]))
+    labels.short_description = 'IDs Etiquetas'
 
     def link(self, obj):
         if obj.print_url:
@@ -40,5 +38,5 @@ class PurchaseAdmin(admin.ModelAdmin):
     print_labels.short_description = 'Imprimir etiquetas'
 
 
-admin.site.register(Label, LabelAdmin)
+# admin.site.register(Label, LabelAdmin)
 admin.site.register(Purchase, PurchaseAdmin)

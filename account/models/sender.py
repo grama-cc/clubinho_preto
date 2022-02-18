@@ -20,8 +20,19 @@ class Sender(models.Model):
     postal_code = models.CharField(max_length=255, verbose_name="CEP")
     note = models.CharField(max_length=255, verbose_name="Observação")
 
+    jadlog_agency_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="Agência Jadlog")
+    jadlog_agency_options = models.JSONField(default=dict, verbose_name="Opções Agências Jadlog")
+    update_jadlog_options  = models.BooleanField(default=False, verbose_name="Atualizar opções Jadlog?")
+
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        if self.update_jadlog_options:
+            from celery_app.celery import task_get_jadlog_agencies
+            task_get_jadlog_agencies.delay()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Remetente"
+        verbose_name_plural = "Remetente"

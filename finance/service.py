@@ -1,12 +1,13 @@
 import json
 from datetime import datetime, timedelta
+from re import S
 
 import requests
-from account.models import Subscriber
-from clubinho_preto.settings import ASAAS_KEY, ASAAS_URL
+from account.models import Subscriber, Warning
+from clubinho_preto.settings import (ASAAS_KEY, ASAAS_URL,
+                                     BASE_SUBSCRIPTION_VALUE)
 
-from finance.models import Subscription
-from clubinho_preto.settings import BASE_SUBSCRIPTION_VALUE
+from finance.models import PaymentHistory, Subscription
 
 
 class FinanceService:
@@ -101,6 +102,8 @@ class FinanceService:
     @staticmethod
     def update_asaas_subscriptions(ids=None):
         asaas_subscriptions = FinanceService.get_asaas_subscriptions()
+        subscribers = Subscriber.objects.all().values_list('id', 'asaas_customer_id')
+        subscribers_dict = {s[1]: s[0] for s in subscribers}
 
         updated = errors = 0
 
@@ -115,10 +118,16 @@ class FinanceService:
                 'status': asaas_subscription.get('status'),
                 'deleted': asaas_subscription.get('deleted'),
             }
+
+            customer_id = asaas_subscription.get('customer')
+            subscriber = subscribers_dict.get(customer_id)
+            if subscriber:
+                data['subscriber'] = subscriber
+
             try:
                 subscriptions.update(**data)
                 updated += len(subscriptions)
-            except:
+            except Exception as e:
                 errors += len(subscriptions) if subscriptions else 1
 
         return [updated, errors]
@@ -153,3 +162,52 @@ class FinanceService:
 
         response = FinanceService.asaas_resquest(url, method='POST', data=data)
         return response
+
+    def update_payment_history(subscription_ids=[]):
+        query = {'id__in': subscription_ids} if subscription_ids else {}
+        subscriptions = Subscription.objects.filter(**query)
+
+        success = errors = 0
+        for subscription in subscriptions:
+
+            # Get payment data from Asaas
+            has_more = True
+            asaas_history = []
+            offset = 0
+            limit = 100
+            while has_more:
+                asaas_data = FinanceService.asaas_resquest(
+                    f'payments/?subscription={subscription.asaas_id}&limit={limit}&offset={offset}'
+                )
+                if asaas_data:
+                    asaas_history.extend(asaas_data.get('data'))
+                    has_more = asaas_data.get('hasMore')
+                    offset += limit
+                else:
+                    # Could not get API response
+                    has_more = False
+                    errors += 1
+                    Warning.objects.create(
+                        text=f"Não conseguiu importar histórico da assinatura #{subscription.id} - {subscription.asaas_id}",
+                        solution="Verifique o ID da assinatura no Asaas"
+                    )
+                    continue
+
+            # Update subscription with payment history
+            for payment_data in asaas_history:
+                payment_history_data = {
+                    'subscription': subscription,
+                    'value': payment_data.get('value'),
+                    'due_date': payment_data.get('dueDate'),
+                    'invoice_id': payment_data.get('id'),
+                    'billingType': payment_data.get('billingType'),
+                    'status': payment_data.get('status'),
+                }
+                existing = PaymentHistory.objects.filter(invoice_id=payment_data.get('id'))
+                if existing:
+                    existing.update(**payment_history_data)
+                else:
+                    PaymentHistory.objects.create(**payment_history_data)
+                success += 1
+
+        return [success, errors]

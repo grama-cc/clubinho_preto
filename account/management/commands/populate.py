@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
-
+from celery_app.celery import task_import_asaas_customers, task_import_subscriptions, task_update_subscriptions
+from celery import chain
 
 class Command(BaseCommand):
     help = 'Populate the database with initial data'
@@ -29,3 +30,9 @@ class Command(BaseCommand):
         else:
             print("Já existe um remetente cadastrado")
 
+    print("Importando assinantes e assinaturas")
+    chain(
+        task_import_asaas_customers.s(),
+        task_import_subscriptions.s(),
+        task_update_subscriptions.s(),
+    )().get()

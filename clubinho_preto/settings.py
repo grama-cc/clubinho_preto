@@ -33,10 +33,10 @@ BASE_SUBSCRIPTION_VALUE = float(os.environ.get('BASE_SUBSCRIPTION_VALUE', defaul
 MELHORENVIO_URL = os.environ.get('MELHORENVIO_URL', default='https://www.melhorenvio.com.br/')
 MELHORENVIO_CLIENT_ID = os.environ.get('MELHORENVIO_CLIENT_ID', default='MELHORENVIO_CLIENT_ID')
 MELHORENVIO_SECRET = os.environ.get('MELHORENVIO_SECRET', default='MELHORENVIO_SECRET')
-MELHORENVIO_SHIPPING_FROM = os.environ.get('MELHORENVIO_SHIPPING_FROM', default='MELHORENVIO_SHIPPING_FROM')
+JADLOG_ID = os.environ.get('JADLOG_ID', default='2')
 
 BACKEND_BASE_URL = os.environ.get('BACKEND_BASE_URL', default='BACKEND_BASE_URL')
-MELHORENVIO_REDIRECT_URL = f"{BACKEND_BASE_URL}get_token"
+MELHORENVIO_REDIRECT_URL = os.path.join(BACKEND_BASE_URL,"get_token")
 
 # todo: restrict
 CORS_ALLOW_ALL_ORIGINS = True
@@ -136,7 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-BR'
 
 TIME_ZONE = 'America/Sao_Paulo'
 
