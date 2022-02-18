@@ -2,6 +2,7 @@ from box.models import Shipping
 from django.contrib import admin
 from django.contrib.admin import register
 from django.db.models import Count
+from django.forms import ModelForm
 from django.db.models.expressions import OuterRef, Subquery
 from django.utils.html import mark_safe  # Newer versions
 from finance.models import (PaymentHistory, Subscription, SUBSCRIPTION_DICT)
@@ -16,6 +17,19 @@ admin.site.site_header = "Clubinho Preto Admin"
 
 admin.site.site_url = '/authorize_application'
 
+# region Forms
+class SenderModelForm(ModelForm):
+
+    class Meta:
+        model = Sender
+        fields = '__all__'
+
+        help_texts = {
+            'update_jadlog_options': 'Deixe marcada esta opção para atualizar as opções de agências jadlog. <br>\
+                Uma vez que forem atualizadas, ela será automaticamente desmarcada.',
+        }
+
+# endregion
 
 class SubscriptionInline(admin.StackedInline):
     model = Subscription
@@ -64,7 +78,7 @@ class SubscriberAdmin(admin.ModelAdmin):
          {"fields": ("name", "email", "phone", "cpf")}),
         ("Endereço",
          {"fields": ("address", "addressNumber", "province", "cep", "city", "state_initials", "complement", "delivery", "note")}),
-        ("Assinatura Clubinho",
+        ("Informações do Clubinho",
          {"fields": ("relatedness", "relatedness_raw", "kids_name", "kids_age", "kids_gender", "kids_race", "kids_gender_raw", "kids_race_raw", "subscribing_date", "more_info", "asaas_customer_id")}),
     )
 
@@ -135,6 +149,7 @@ class SubscriberAdmin(admin.ModelAdmin):
 class SenderAdmin(admin.ModelAdmin):
     list_display = "name", "phone", "email", "address", "jadlog_agency_id",
     readonly_fields = "jadlog_agency_options", "agency_options"
+    form = SenderModelForm
     fieldsets = (
         ("Informações Gerais",
          {"fields": ("name", "phone", "email", )}),
@@ -149,7 +164,7 @@ class SenderAdmin(admin.ModelAdmin):
          {"fields": ("note",)}),
 
         ("JadLog",
-         {"fields": ("jadlog_agency_id", "agency_options",)}),
+         {"fields": ("jadlog_agency_id", "agency_options", "update_jadlog_options")}),
     )
 
     def has_add_permission(self, request, obj=None):

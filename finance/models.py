@@ -49,6 +49,9 @@ class Subscription(models.Model):
     status = models.CharField(max_length=255, blank=True, null=True)
     deleted = models.BooleanField(default=False, verbose_name='Excluído')
 
+    def __str__(self) -> str:
+        return f"Assinatura {self.id if self.id else ''}"
+
     class Meta:
         verbose_name = "Assinatura"
         verbose_name_plural = "Assinaturas"

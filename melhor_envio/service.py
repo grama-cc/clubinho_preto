@@ -380,6 +380,7 @@ class MelhorEnvioService():
                         **{f: agency.get(f) for f in fields},
                     })
                 sender.jadlog_agency_options = agencies
+                sender.update_jadlog_options = False
                 sender.save()
                 return True
             except Exception as e:
