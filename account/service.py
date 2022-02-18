@@ -85,12 +85,16 @@ class AccountService:
             keys = ['phone', 'address', 'addressNumber', 'complement', 'province']
             
             # parse from string to dict
-            _observations = asaas_customer.get('observations','').split(';')
-            observations = {item.split(':')[0]: item.split(':')[1] for item in _observations if ':' in item}
-            # remove keys that are not relevant
-            items_to_remove = list(filter(lambda key_value:  key_value[1].strip() in ['None', ''],observations.items()))
-            for key, value in items_to_remove:
-                observations.pop(key)
+            _observations = asaas_customer.get('observations','')
+            if observations:
+                _observations = _observations.split(';')
+                observations = {item.split(':')[0]: item.split(':')[1] for item in _observations if ':' in item}
+                # remove keys that are not relevant
+                items_to_remove = list(filter(lambda key_value:  key_value[1].strip() in ['None', ''],observations.items()))
+                for key, value in items_to_remove:
+                    observations.pop(key)
+            else:
+                observations = {}
 
             data = {
                 'asaas_customer_id': asaas_customer.get('id'),
