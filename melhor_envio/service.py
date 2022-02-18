@@ -372,13 +372,16 @@ class MelhorEnvioService():
                 fields = 'id', 'name', 'status',
                 agencies = []
                 for agency in data:
-                    agencies.append({
+                    agency_data = {
                         'address': agency.get('address',{}).get('address'),
                         'district': agency.get('address',{}).get('district'),
                         'city': agency.get('address',{}).get('city',{}).get('city'),
                         
                         **{f: agency.get(f) for f in fields},
-                    })
+                    }
+                    if 'rio de janeiro' in agency_data.get('city','').lower():
+                        agencies.append(agency_data)
+                        
                 sender.jadlog_agency_options = agencies
                 sender.update_jadlog_options = False
                 sender.save()
