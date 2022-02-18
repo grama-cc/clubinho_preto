@@ -6,6 +6,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quero ser assinante do Clubinho Preto!</title>
+    <link rel="icon" type="image/png" href="{% static 'favicon.png'%}"/>
+
 
     <!-- JQuery -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
@@ -21,11 +23,11 @@
 </head>
 
 <body>
-    <img class="header-image" src="{% static 'media/clubinho_header.png' %}" alt="Imagem Clubinho"
+    <img class="header-image" src="{% static 'clubinho_header.png' %}" alt="Imagem Clubinho"
         title="Imagem Clubinho">
-    
+
     <div class="container">
-    
+
         <div class="header-info">
             <h1>🤴🏿👸🏿</h1>
             <h2>Que bom que você está construindo conosco um mundo melhor!</h2>
@@ -44,25 +46,30 @@
             {{ error_message }}
         </p>
 
-        <form action="subscribe" method="post">
+        <form action="/" method="post">
             {% csrf_token %}
+
+            <!-- email -->
             <div class="input-group">
 
                 <label for="email" class="required"> Email</label>
                 <input type="email" name="email" id="email" required>
             </div>
 
+            <!-- name -->
             <div class="input-group">
                 <label for="name" class="required"> Nome do(a) adulto(a)</label>
                 <input type="text" name="name" id="name" required>
             </div>
 
+            <!-- cpf -->
             <div class="input-group">
                 <label for="cpfCnpj" class="required"> CPF </label>
                 <input type="text" name="cpfCnpj" id="cpfCnpj" pattern="[0-9]{11}" class="validate" required>
                 <span class="helper-text" data-error="Preencha no formato: 12345678900" data-success=""></span>
             </div>
 
+            <!-- relatedness -->
             <div class="input-group">
                 <label for="relatedness" class="required"> Grau de parentesco com a criança</label>
 
@@ -105,6 +112,7 @@
                 </div>
             </div>
 
+            <!-- phone -->
             <div class="input-group">
                 <label for="phone" class="required"> Telefone </label>
                 <input type="tel" name="phone" id="phone" pattern="[0-9]{8,14}" class="validate" required>
@@ -113,11 +121,13 @@
                 <span class="validity"></span>
             </div>
 
+            <!-- kids_name -->
             <div class="input-group">
                 <label for="kids_name" class="required"> Nome da criança</label>
                 <input type="text" name="kids_name" id="kids_name" required>
             </div>
 
+            <!-- kids_age -->
             <div class="input-group">
                 <label for="kids_age" class="required"> Idade da criança</label>
 
@@ -162,33 +172,101 @@
                 </div>
             </div>
 
+            <!-- kids_gender -->
             <div class="input-group">
-                <label for="kids_gender_raw" class="required"> Gênero da criança</label>
+                <label for="kids_gender" class="required"> Gênero da criança</label>
 
                 <div>
                     <label>
-                        <input type="radio" name="kids_gender_raw" id="MA" value="MA">
+                        <input type="radio" name="kids_gender" id="MA" value="MA">
                         <span>Masculino</span>
                     </label><br />
                     <label>
-                        <input type="radio" name="kids_gender_raw" id="FE" value="FE" required>
+                        <input type="radio" name="kids_gender" id="FE" value="FE" required>
                         <span>Feminino</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_gender" id="NO" value="NO" required>
+                        <span>Prefiro não responder</span>
                     </label><br />
                 </div>
             </div>
 
+            <!-- kids_race -->
             <div class="input-group">
-                <label for="address" class="required"> Endereço para entrega</label>
-                <input type="text" name="address" id="address" required>
+                <label for="kids_race" class="required"> Cor/raça da criança </label>
+                <div>
+                    <label>
+                        <input type="radio" name="kids_race" id="WH" value="WH" required>
+                        <span>Branca</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="PA" value="PA">
+                        <span>Parda</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="BL" value="BL">
+                        <span>Preta</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="YE" value="YE">
+                        <span>Amarela</span>
+                    </label><br />
+                    <label>
+                        <input type="radio" name="kids_race" id="NA" value="NA">
+                        <span>Indígena</span>
+                    </label><br />
+
+                </div>
             </div>
 
+            <!-- cep -->
             <div class="input-group">
-                <label for="cep" class="required"> CEP</label>
-                <input type="text" name="cep" id="cep" required pattern="[0-9]{8}">
-                <span class="helper-text" data-error="Preencha no formato 12345678" data-success=""></span>
+                <label for="postalCode" class="required"> CEP</label>
+                <input type="text" name="postalCode" id="postalCode" required pattern="[0-9]{8}" class="validate">
+                <span class="helper-text" id="postalCodeErrorMessage" data-error="" data-success=""></span>
+            </div>
+
+            <!-- address -->
+            <div class="input-group">
+                <label for="address" class="required col s8"> Endereço para entrega</label>
+                <input type="text" name="address" id="address" required readonly>
+            </div>
+
+            <!-- addressNumber -->
+            <div class="input-group">
+                <label for="addressNumber" class="required"> Numero</label>
+                <input type="text" name="addressNumber" id="addressNumber" required pattern="[0-9]{1,}"
+                    class="validate">
+                <span class="helper-text" data-error="Preencha no formato: 123" data-success=""></span>
+            </div>
+
+            <!-- complement -->
+            <div class="input-group">
+                <label for="complement"> Complemento</label>
+                <input type="text" name="complement" id="complement">
+            </div>
+
+            <!-- province -->
+            <div class="input-group">
+                <label for="province" class="required"> Bairro</label>
+                <input type="text" name="province" id="province" required readonly>
+            </div>
+            
+            <!-- city -->
+            <div class="input-group">
+                <label for="city" class="required"> Cidade </label>
+                <input type="text" name="city" id="city" required readonly>
+            </div>
+            
+            <!-- state_initials -->
+            <div class="input-group">
+                <label for="state_initials" class="required"> UF </label>
+                <input type="text" name="state_initials" id="state_initials" required readonly>
             </div>
 
 
+            <!-- delivery -->
             <div class="input-group">
                 <label for="delivery" class="required"> Local do frete</label>
 
@@ -225,11 +303,6 @@
         var instances = M.FormSelect.init(elems, {});
     });
 
-    // Or with jQuery
-
-    $(document).ready(function () {
-        $('select').formSelect();
-    });
 
     // Display text-field based radio button selection
     const divToToggle = document.getElementById('specify-relatedness')
@@ -245,6 +318,61 @@
         })
     }
 
+    const cepValidationMessage = 'Preencha no formato: 11223344'
+    // Manually set CEP validation text
+    postalCodeErrorMessage.setAttribute('data-error', cepValidationMessage)
+
+
+    // Autofill address info based on CEP field
+    document.getElementById('postalCode').addEventListener('input', async (event) => {
+        // check cep length
+        // validate
+        if (event.target.value.length == 8) {
+            // check cep with viacep
+            // validate
+            const cep = event.target.value
+            const addressData = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => data);
+            
+            // console.log(addressData)
+
+            const postalCodeErrorMessage = document.getElementById('postalCodeErrorMessage')
+            document.getElementById('postalCodeErrorMessage')
+                    
+
+            if ((!addressData) || addressData.erro){
+                console.log('erro')
+                event.target.focus()
+                event.target.setCustomValidity("Invalid field.")
+                postalCodeErrorMessage.setAttribute('data-error', 'CEP inválido')
+            }
+            else {
+                postalCodeErrorMessage.setAttribute('data-error', cepValidationMessage)
+                event.target.setCustomValidity("")
+
+                // fill other fields
+                document.getElementById("address").setAttribute('value', addressData.logradouro)
+                document.getElementById("province").setAttribute('value', addressData.bairro)
+                document.getElementById("state_initials").setAttribute('value', addressData.uf)
+                document.getElementById("city").setAttribute('value', addressData.localidade)
+
+                const uf = addressData.uf
+                const cidade = addressData.localidade
+                if (['SP', 'ES', 'MG'].includes(uf))
+                    document.getElementById('sp_es_mg').checked = true
+                else if (cidade == 'Rio de Janeiro')
+                    document.getElementById('rio').checked = true
+                else if (uf == 'RJ') // rio, mas não da cidade
+                    document.getElementById('metropolitana').checked = true
+
+
+            }
+        }
+
+
+
+    })
 </script>
 
 </html>

@@ -20,7 +20,7 @@
 </head>
 
 <body>
-    <img class="header-image" src="{% static 'media/clubinho_header.png' %}" alt="Imagem Clubinho"
+    <img class="header-image" src="{% static 'clubinho_header.png' %}" alt="Imagem Clubinho"
         title="Imagem Clubinho">
 
     <div class="container stretch-height-80">
@@ -33,9 +33,17 @@
 
 
         <h5>
-            <a href="{{ invoice_url }}" target="_blank">Este é o seu link de pagamento</a>. Nele você irá preencher as
-            informações de pagamento para finalizarmos sua assinatura.
+            Um email foi enviado para 
+            {% if email %}
+                <span style="font-style: italic;"> {{email}}</span>
+            {% else %}
+                você
+            {% endif %}
+             com o link de pagamento da sua assinatura. 
         </h5>
+        <h6>
+            Obrigado por assinar! 😊
+        </h6>
 
     </div>
 

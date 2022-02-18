@@ -19,10 +19,14 @@ import debug_toolbar
 from clubinho_preto import settings
 from django.conf.urls.static import static
 from finance.views import SubscribeView
+from melhor_envio.views import AuthorizeApplicationView, GetTokenView, RefreshTokenView
 
 urlpatterns = [
+    path('', SubscribeView.as_view(), name='home'),
     path('admin/', admin.site.urls),
-    path('subscribe', SubscribeView.as_view(), name='subscribe'),
+    path('authorize_application', AuthorizeApplicationView.as_view(), name='authorize_application'),
+    path('refresh_token', RefreshTokenView.as_view(), name='refresh_token'),
+    path('get_token', GetTokenView.as_view(), name='get_token'),
 ]  + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
