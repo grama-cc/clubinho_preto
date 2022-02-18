@@ -86,7 +86,7 @@ class AccountService:
             
             # parse from string to dict
             _observations = asaas_customer.get('observations','')
-            if observations:
+            if _observations:
                 _observations = _observations.split(';')
                 observations = {item.split(':')[0]: item.split(':')[1] for item in _observations if ':' in item}
                 # remove keys that are not relevant
